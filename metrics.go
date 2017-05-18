@@ -1,0 +1,44 @@
+package zenkit
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+
+	"github.com/goadesign/goa"
+	metrics "github.com/rcrowley/go-metrics"
+)
+
+func WithMetrics(ctx context.Context, registry metrics.Registry) context.Context {
+	return context.WithValue(ctx, metricsKey, registry)
+}
+
+func ContextMetrics(ctx context.Context) metrics.Registry {
+	if v := ctx.Value(metricsKey); v != nil {
+		return v.(metrics.Registry)
+	}
+	return nil
+}
+
+func MeasureTime(ctx context.Context) func() {
+	begin := TimeFunc()
+	fn := funcName()
+	registry := ContextMetrics(ctx)
+	exit := func() {
+		if registry == nil {
+			return
+		}
+		t := metrics.GetOrRegisterTimer(fmt.Sprintf("func.%s.time", fn), registry)
+		t.UpdateSince(begin)
+	}
+	return exit
+}
+
+func MetricsMiddleware() goa.Middleware {
+	m := metrics.NewRegistry()
+	return func(h goa.Handler) goa.Handler {
+		return func(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
+			return h(WithMetrics(ctx, m), rw, req)
+		}
+	}
+}
