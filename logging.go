@@ -20,3 +20,13 @@ func SetVerbosity(svc *goa.Service, verbosity int) {
 	logger := ContextLogger(svc.Context).Logger
 	logger.Level = logrus.WarnLevel + logrus.Level(verbosity)
 }
+
+func LogEntryAndExit(ctx context.Context) func() {
+	logger := ContextLogger(ctx)
+	fn := funcName(3)
+	logger.Debugf("ENTER %s()", fn)
+	exit := func() {
+		log.Debugf("EXIT %s()", fn)
+	}
+	return exit
+}

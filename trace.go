@@ -30,9 +30,9 @@ func (c *fnNameCache) Get(key uintptr, factory func() string) (data string, foun
 	return
 }
 
-func funcName() string {
+func funcName(level int) string {
 	fnName := "<unknown>"
-	pc, _, _, ok := runtime.Caller(3)
+	pc, _, _, ok := runtime.Caller(level)
 	if ok {
 		fnName, _ = fnNames.Get(pc, func() string {
 			return stripFnPreamble.ReplaceAllString(runtime.FuncForPC(pc).Name(), "$1")
