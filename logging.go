@@ -26,7 +26,7 @@ func LogEntryAndExit(ctx context.Context) func() {
 	fn := funcName(3)
 	logger.Debugf("ENTER %s()", fn)
 	exit := func() {
-		log.Debugf("EXIT %s()", fn)
+		logger.Debugf("EXIT %s()", fn)
 	}
 	return exit
 }
