@@ -19,11 +19,12 @@ func ContextLogger(ctx context.Context) *logrus.Entry {
 func SetVerbosity(svc *goa.Service, verbosity int) {
 	logger := ContextLogger(svc.Context).Logger
 	logger.Level = logrus.WarnLevel + logrus.Level(verbosity)
+	logger.WithField("level", logger.Level).Info("Log level changed")
 }
 
 func LogEntryAndExit(ctx context.Context) func() {
 	logger := ContextLogger(ctx)
-	fn := funcName(3)
+	fn := funcName(2)
 	logger.Debugf("ENTER %s()", fn)
 	exit := func() {
 		logger.Debugf("EXIT %s()", fn)

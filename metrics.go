@@ -22,7 +22,7 @@ func ContextMetrics(ctx context.Context) metrics.Registry {
 
 func MeasureTime(ctx context.Context) func() {
 	begin := TimeFunc()
-	fn := funcName(3)
+	fn := funcName(2)
 	registry := ContextMetrics(ctx)
 	exit := func() {
 		if registry == nil {
