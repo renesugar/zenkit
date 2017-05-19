@@ -31,8 +31,6 @@ func Generate() ([]string, error) {
 	set.StringVar(&appPkg, "app", "app", "")
 	set.Parse(os.Args[2:])
 
-	fmt.Println(outDir, ver)
-
 	if err := codegen.CheckVersion(ver); err != nil {
 		return nil, err
 	}
