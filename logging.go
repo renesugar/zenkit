@@ -24,6 +24,9 @@ func SetVerbosity(svc *goa.Service, verbosity int) {
 
 func LogEntryAndExit(ctx context.Context) func() {
 	logger := ContextLogger(ctx)
+	if logger == nil {
+		return
+	}
 	fn := funcName(2)
 	logger.Debugf("ENTER %s()", fn)
 	exit := func() {
