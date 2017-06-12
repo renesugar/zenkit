@@ -8,6 +8,8 @@ import (
 	goalogrus "github.com/goadesign/goa/logging/logrus"
 )
 
+var noop = func() {}
+
 func ServiceLogger() goa.LogAdapter {
 	return goalogrus.New(logrus.New())
 }
@@ -25,7 +27,7 @@ func SetVerbosity(svc *goa.Service, verbosity int) {
 func LogEntryAndExit(ctx context.Context) func() {
 	logger := ContextLogger(ctx)
 	if logger == nil {
-		return
+		return noop
 	}
 	fn := funcName(2)
 	logger.Debugf("ENTER %s()", fn)
