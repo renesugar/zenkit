@@ -2,10 +2,15 @@ package zenkit
 
 import (
 	"github.com/goadesign/goa"
+	"github.com/goadesign/goa/design/apidsl"
 	"github.com/goadesign/goa/middleware"
 )
 
-func NewService(name string) *goa.Service {
+var JWT = apidsl.JWTSecurity("jwt", func() {
+	apidsl.Header("Authorization")
+})
+
+func NewService(name string, key []byte) *goa.Service {
 
 	svc := goa.New(name)
 	svc.Use(middleware.RequestID())
@@ -15,6 +20,13 @@ func NewService(name string) *goa.Service {
 	svc.Use(middleware.Recover())
 
 	svc.WithLogger(ServiceLogger())
+
+	//// Set up security
+	//resolver := jwt.NewSimpleResolver([]jwt.Key{key})
+	//validationFunc := func(next goa.Handler) goa.Handler {
+	//return next
+	//}
+	//svc.Use(jwt.New(resolver, validationFunc, JWT))
 
 	return svc
 }
