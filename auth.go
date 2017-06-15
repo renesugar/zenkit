@@ -57,3 +57,8 @@ func ContextIdentity(ctx context.Context) Identity {
 	}
 	return nil
 }
+
+const (
+	ScopeAPIAccess = "api:access"
+	ScopeAPIAdmin  = "api:admin"
+)
