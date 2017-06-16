@@ -29,6 +29,12 @@ func SetLogLevel(svc *goa.Service, level string) {
 		}).Error("Unable to parse log level. Not changing.")
 		return
 	}
+	if oldlevel == newlevel {
+		logger.WithFields(logrus.Fields{
+			"level": oldlevel,
+		}).Debug("Requested log level is already active. Ignoring.")
+		return
+	}
 	logger.Level = newlevel
 	logger.WithFields(logrus.Fields{
 		"oldlevel": oldlevel,
