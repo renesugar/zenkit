@@ -29,7 +29,9 @@ func JWTValidatorFunc(m JWTValidator) goa.Middleware {
 				return err
 			}
 			token := jwt.ContextJWT(ctx)
-			ctx = WithIdentity(ctx, &tokenIdentity{claims: token.Claims.(jwtgo.MapClaims)})
+			ident := &tokenIdentity{claims: token.Claims.(jwtgo.MapClaims)}
+			ctx = WithIdentity(ctx, ident)
+			ctx = goa.WithLogContext(ctx, "user_id", ident.ID())
 			return h(ctx, rw, req)
 		}
 	}

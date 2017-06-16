@@ -12,7 +12,7 @@ func NewService(name string) *goa.Service {
 	svc.WithLogger(ServiceLogger())
 
 	svc.Use(middleware.RequestID())
-	svc.Use(middleware.LogRequest(true))
+	svc.Use(middleware.LogRequest(false))
 	svc.Use(MetricsMiddleware())
 	svc.Use(middleware.ErrorHandler(svc, true))
 	svc.Use(middleware.Recover())
