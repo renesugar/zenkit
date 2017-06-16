@@ -18,10 +18,22 @@ func ContextLogger(ctx context.Context) *logrus.Entry {
 	return goalogrus.Entry(ctx)
 }
 
-func SetVerbosity(svc *goa.Service, verbosity int) {
+func SetLogLevel(svc *goa.Service, level string) {
 	logger := ContextLogger(svc.Context).Logger
-	logger.Level = logrus.WarnLevel + logrus.Level(verbosity)
-	logger.WithField("level", logger.Level).Info("Log level changed")
+	oldlevel := logger.Level
+	newlevel, err := logrus.ParseLevel(level)
+	if err != nil {
+		logger.WithFields(logrus.Fields{
+			"level":    oldlevel,
+			"badlevel": level,
+		}).Error("Unable to parse log level. Not changing.")
+		return
+	}
+	logger.Level = newlevel
+	logger.WithFields(logrus.Fields{
+		"oldlevel": oldlevel,
+		"newlevel": newlevel,
+	}).Info("Log level changed")
 }
 
 func LogEntryAndExit(ctx context.Context) func() {
