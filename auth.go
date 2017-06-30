@@ -45,6 +45,16 @@ func JWTValidatorFunc(m JWTValidator) goa.Middleware {
 	}
 }
 
+func DevModeMiddleware(h goa.Handler) goa.Handler {
+	return func(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
+		header := req.Header.Get("Authorization")
+		if header == "" {
+			req.Header.Set("Authorization", devJWT)
+		}
+		return h(ctx, rw, req)
+	}
+}
+
 type Identity interface {
 	ID() string
 }
@@ -92,4 +102,9 @@ func readKeyFromFS(service *goa.Service, filename string) ([]byte, error) {
 const (
 	ScopeAPIAccess = "api:access"
 	ScopeAPIAdmin  = "api:admin"
+)
+
+const (
+	// This token is signed with the secret "secret" and gives the bearer the scopes "api:admin api:access"
+	devJWT = `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZXZlbG9wZXIiLCJuYW1lIjoiQS4gRGV2ZWxvcGVyLCBFc3EuIiwiYWRtaW4iOnRydWUsInNjb3BlcyI6ImFwaTphZG1pbiBhcGk6YWNjZXNzIn0.e2YYHulpdvpnBdvdpUJyyJnC2xsm4VMrs6riy9WX4Ug`
 )
