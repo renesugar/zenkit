@@ -104,6 +104,19 @@ cumbersome setup.
 Changes to the zenkit template will, for obvious reasons, only affect new
 microservices created using zenkit.
 
+### zenoss/zenkit-build Image
+The [zenoss/zenkit-build](https://hub.docker.com/r/zenoss/zenkit-build/)
+([GitHub](https://github.com/zenoss/zenkit-build)) Docker image is used to run
+tests, build the service binaries, generate coverage reports, etc. Its purpose
+is to remove steps a developer must perform to get started. The Makefile in
+zenkit-template uses this image automatically.
+
+You may find it convenient, however, to install the testing tools locally
+rather than running them in a container. You may do this by running `make
+local-dev`. This will install the Go testing and coverage tools into your
+existing Go environment. The Makefile is smart enough to use local tools if you
+installed them, so you can keep running `make test`.
+
 ### Technologies Used
 * [Cobra](https://github.com/spf13/cobra) for CLI. Cobra files live under the
   `cmd` directory and are created using the `cobra` command line application.
