@@ -26,6 +26,14 @@ To develop and run a zenkit microservice, you will need:
 * A Go environment. [gvm](https://github.com/moovweb/gvm) is an easy way to get
   one. Use the most recent release.
 
+Additional helpful utilities include:
+* [cobra](https://github.com/spf13/cobra) (`go get github.com/spf13/cobra/cobra`)
+* [httpie](https://httpie.org/) (`apt install httpie` on Ubuntu)
+* [jq](https://stedolan.github.io/jq/) (`apt install jq` on Ubuntu)
+* Also, run `make local-dev` to install build and test tools in your local
+  environment. Everything will still work if you don't do this, using a Docker
+  container, but you may find it convenient.
+
 ## Quickstart
 Just run this to create a microservice named `examplesvc`:
 
