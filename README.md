@@ -76,35 +76,6 @@ You'll need to [add your source](#create-github-repo) to Github and
 When you're ready to add business logic to your new service,
 [proceed](#microservice-development).
 
-### Create Github Repo
-To create a new repo on Github, navigate to the 
-[new repository page](https://github.com/organizations/zenoss/repositories/new).
-Enter a representative name and description, make sure the repository will be 
-private, disable options to automatically add files to the repo, and click the 
-*Create repository* button.  Follow the instructions to _Push an existing 
-repository from the command line_.
-
-There are several Github configuration items that are required for the new repo.
-Browse to the _Settings_ tab in the new repo.  In the _Collaborations & teams_ 
-settings, add the following teams and permissions:
-
-| Team | Permission |
-| ---- | ---------- |
-| Administrators | Admin |
-| Developers | Write |
-| Automation | Read | 
-
-In the _Branches_ settings, choose the _master_ branch for protection and 
-ensure that the options for "Require pull request reviews before merging" 
-and "Require status checks to pass before merging" are enabled.
-
-### Create Jenkins Jobs
-To create the suite of Jenkins Jobs, browse to the 
-[Micro-Service Job Builder](http://jenkins.zing.zenoss.eng/job/job_create/build?delay=0sec), 
-enter the name of the service repo, and click "Build".  This will create a 
-new suite of jobs for your service in the
-[Micro-services folder](http://jenkins.zing.zenoss.eng/job/micro-services/). 
-
 ## Zenkit Components
 ### The zenkit library
 The _zenkit_ library provides:
@@ -207,6 +178,37 @@ installed them, so you can keep running `make test`.
    may also simply use `go build {{Name}}`, then run the resulting binary
    manually, although if supporting services are required, the `docker-compose`
    functionality the Makefile implements is very convenient.
+
+## Build and Repo Setup 
+
+### Create Github Repo
+To create a new repo on Github, navigate to the 
+[new repository page](https://github.com/organizations/zenoss/repositories/new).
+Enter a representative name and description, make sure the repository will be 
+private, disable options to automatically add files to the repo, and click the 
+*Create repository* button.  Follow the instructions to _Push an existing 
+repository from the command line_.
+
+There are several Github configuration items that are required for the new repo.
+Browse to the _Settings_ tab in the new repo.  In the _Collaborations & teams_ 
+settings, add the following teams and permissions:
+
+| Team | Permission |
+| ---- | ---------- |
+| Administrators | Admin |
+| Developers | Write |
+| Automation | Read | 
+
+In the _Branches_ settings, choose the _master_ branch for protection and 
+ensure that the options for "Require pull request reviews before merging" 
+and "Require status checks to pass before merging" are enabled.
+
+### Create Jenkins Jobs
+To create the suite of Jenkins Jobs, browse to the 
+[Microservice Job Builder](http://jenkins.zing.zenoss.eng/job/job_create/build?delay=0sec), 
+enter the name of the service repo, and click "Build".  This will create a 
+new suite of jobs for your service in the
+[Microservices folder](http://jenkins.zing.zenoss.eng/job/micro-services/). 
 
 ## Issues?
 [Zenoss Jira](https://jira.zenoss.com). Open an issue, ZING project, Zenkit
