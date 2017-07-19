@@ -182,6 +182,13 @@ installed them, so you can keep running `make test`.
 ## Build and Repo Setup 
 
 ### Create Github Repo
+Initialize git and commit the initial state of the project:
+```
+git init
+git add .
+git commit -m "Initial commit"
+```
+
 To create a new repo on Github, navigate to the 
 [new repository page](https://github.com/organizations/zenoss/repositories/new).
 Enter a representative name and description, make sure the repository will be 
