@@ -5,12 +5,12 @@ import (
 	"github.com/goadesign/goa/middleware"
 )
 
-func NewService(name string, devMode bool) *goa.Service {
+func NewService(name string, authDisabled bool) *goa.Service {
 
 	svc := goa.New(name)
 	svc.WithLogger(ServiceLogger())
 
-	if devMode {
+	if authDisabled {
 		svc.Use(DevModeMiddleware)
 	}
 	svc.Use(middleware.RequestID())

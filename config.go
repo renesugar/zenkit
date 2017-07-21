@@ -14,8 +14,8 @@ const (
 	TracingDaemonConfig     = "tracing.daemon"
 	TracingSampleRateConfig = "tracing.sample_rate"
 
-	AuthEnabledConfig = "auth.enabled"
-	AuthKeyFileConfig = "auth.key_file"
+	AuthDisabledConfig = "auth.disabled"
+	AuthKeyFileConfig  = "auth.key_file"
 
 	HTTPPortConfig = "http.port"
 )
@@ -51,9 +51,9 @@ func AddAuthConfigOptions(cmd *cobra.Command) {
 	viper.BindPFlag(AuthKeyFileConfig, cmd.PersistentFlags().Lookup("auth-key-file"))
 	viper.SetDefault(AuthKeyFileConfig, "")
 
-	cmd.PersistentFlags().Bool("auth-enabled", true, "If false, run with middleware that injects a default admin identity for unauthenticated requests")
-	viper.BindPFlag(AuthEnabledConfig, cmd.PersistentFlags().Lookup("auth-enabled"))
-	viper.SetDefault(AuthEnabledConfig, true)
+	cmd.PersistentFlags().Bool("auth-disabled", false, "Run with middleware that injects a default admin identity for unauthenticated requests")
+	viper.BindPFlag(AuthDisabledConfig, cmd.PersistentFlags().Lookup("auth-disabled"))
+	viper.SetDefault(AuthDisabledConfig, false)
 }
 
 func AddHTTPOptions(cmd *cobra.Command, port int) {
