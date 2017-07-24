@@ -14,19 +14,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var letterRunes = []rune("abcdefghijklmnopqrstuvwxyz")
-
-func RandStringRunes(n int) string {
-	b := make([]rune, n)
-	for i := range b {
-		b[i] = letterRunes[rand.Intn(len(letterRunes))]
-	}
-	return string(b)
-}
-
 var _ = Describe("Config", func() {
-
-	rand.Seed(GinkgoRandomSeed())
 
 	var (
 		prefix string

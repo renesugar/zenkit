@@ -17,8 +17,10 @@ type JWTValidator func(ctx context.Context) error
 
 var (
 	FS                   = afero.NewReadOnlyFs(afero.NewOsFs())
-	JWT                  = apidsl.JWTSecurity("jwt", func() { apidsl.Header("Authorization") })
+	AuthorizationHeader  = "Authorization2"
+	JWT                  = apidsl.JWTSecurity("jwt", func() { apidsl.Header(AuthorizationHeader) })
 	DefaultJWTValidation = JWTValidatorFunc(func(_ context.Context) error { return nil })
+	KeyFileTimeout       = 30 * time.Second
 )
 
 func JWTMiddleware(service *goa.Service, filename string, validator goa.Middleware, security *goa.JWTSecurity) (goa.Middleware, error) {
@@ -92,7 +94,7 @@ func readKeyFromFS(service *goa.Service, filename string) ([]byte, error) {
 	}
 	// Docker sometimes doesn't mount the secret right away, so we'll do a short retry
 	boff := backoff.NewExponentialBackOff()
-	boff.MaxElapsedTime = 30 * time.Second
+	boff.MaxElapsedTime = KeyFileTimeout
 	if err := backoff.Retry(readKey, boff); err != nil {
 		return nil, err
 	}
