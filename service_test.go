@@ -1,7 +1,6 @@
 package zenkit_test
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -18,6 +17,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gbytes"
 )
 
 var _ = Describe("Service", func() {
@@ -29,13 +29,15 @@ var _ = Describe("Service", func() {
 		name       string
 		ctrl       *goa.Controller
 		resp       interface{}
-		logBuf     bytes.Buffer
+		logBuf     *gbytes.Buffer
+		logger     *log.Logger
 		respSetter goatest.ResponseSetterFunc = func(r interface{}) { resp = r }
 		encoder                               = func(io.Writer) goa.Encoder { return respSetter }
-		logger                                = log.New(&logBuf, "", log.Ltime)
 	)
 
 	BeforeEach(func() {
+		logBuf = gbytes.NewBuffer()
+		logger = log.New(logBuf, "", log.Ltime)
 		name = RandStringRunes(8)
 		req, _ = http.NewRequest("", "http://example.com/", nil)
 		rw = httptest.NewRecorder()
@@ -46,10 +48,6 @@ var _ = Describe("Service", func() {
 		svc.Encoder = goa.NewHTTPEncoder()
 		svc.Encoder.Register(encoder, "*/*")
 		ctrl = svc.NewController("test")
-	})
-
-	AfterEach(func() {
-		logBuf.Reset()
 	})
 
 	type HandlerFunc func(context.Context, http.ResponseWriter, *http.Request)
@@ -97,9 +95,9 @@ var _ = Describe("Service", func() {
 		RunHandler(func(ctx context.Context, rw http.ResponseWriter, req *http.Request) {
 			reqid = middleware.ContextRequestID(ctx)
 		})
-		Ω(reqid).ShouldNot(BeEmpty())
-		Ω(logBuf.String()).Should(ContainSubstring(fmt.Sprintf("started req_id=%s", reqid)))
-		Ω(logBuf.String()).Should(ContainSubstring(fmt.Sprintf("completed req_id=%s", reqid)))
+		Eventually(reqid).ShouldNot(BeEmpty())
+		Eventually(logBuf).Should(gbytes.Say(fmt.Sprintf("started req_id=%s", reqid)))
+		Eventually(logBuf).Should(gbytes.Say(fmt.Sprintf("completed req_id=%s", reqid)))
 	})
 
 	It("should register a metric registry", func() {
@@ -124,7 +122,7 @@ var _ = Describe("Service", func() {
 			return errors.New(errstr)
 		}
 		ctrl.MuxHandler("test", handler, nil)(rw, req, url.Values{})
-		Ω(logBuf.String()).Should(ContainSubstring(fmt.Sprintf("err=%s", errstr)))
-		Ω(rw.Code).Should(Equal(500))
+		Eventually(logBuf).Should(gbytes.Say(fmt.Sprintf("err=%s", errstr)))
+		Eventually(rw.Code).Should(Equal(500))
 	})
 })
