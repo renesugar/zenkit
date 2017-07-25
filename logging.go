@@ -47,7 +47,7 @@ func LogEntryAndExit(ctx context.Context) func() {
 	if logger == nil {
 		return noop
 	}
-	fn := funcName(2)
+	fn := FuncName(2)
 	logger.Debugf("ENTER %s()", fn)
 	exit := func() {
 		logger.Debugf("EXIT %s()", fn)
