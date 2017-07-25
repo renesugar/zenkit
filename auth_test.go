@@ -10,7 +10,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	jwtpkg "github.com/dgrijalva/jwt-go"
 	"github.com/goadesign/goa"
 	"github.com/goadesign/goa/design"
@@ -61,6 +60,7 @@ var _ = Describe("Auth utilities", func() {
 		defer file.Close()
 		file.Write(secret)
 		svc = goa.New(RandStringRunes(8))
+		svc.WithLogger(&NullLogAdapter{})
 		req, _ = http.NewRequest("", "http://example.com/", nil)
 		resp = httptest.NewRecorder()
 	})
@@ -96,19 +96,15 @@ var _ = Describe("Auth utilities", func() {
 	}
 
 	Context("using common JWT security", func() {
-		It("should register the authorization header \"Authorization\"", func() {
+		It(fmt.Sprintf("should register the authorization header \"%\"", AuthorizationHeader), func() {
 			dslengine.Reset()
 			apidsl.API("test", func() {
-				apidsl.Security(JWT, func() {
-				})
-			})
-			apidsl.Resource("test2", func() {
-				apidsl.Action("whatever", func() {
-				})
+				apidsl.Security(JWT(), func() {})
 			})
 			dslengine.Run()
 			d := design.Design
-			spew.Dump(d)
+			Ω(d.SecuritySchemes).Should(HaveLen(1))
+			Ω(d.SecuritySchemes[0].Name).Should(Equal(AuthorizationHeader))
 		})
 	})
 
@@ -150,8 +146,7 @@ var _ = Describe("Auth utilities", func() {
 
 		It("should fail to create middleware when the file passed does not exist", func() {
 			KeyFileTimeout = 1 * time.Millisecond
-			security := &goa.JWTSecurity{}
-			_, err := JWTMiddleware(goa.New("hi"), "/this/is/notafile", DefaultJWTValidation, security)
+			_, err := JWTMiddleware(svc, "/this/is/notafile", DefaultJWTValidation, security)
 			Ω(err).Should(HaveOccurred())
 		})
 

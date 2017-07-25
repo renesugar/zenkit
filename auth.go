@@ -8,6 +8,7 @@ import (
 	"github.com/cenkalti/backoff"
 	jwtgo "github.com/dgrijalva/jwt-go"
 	"github.com/goadesign/goa"
+	"github.com/goadesign/goa/design"
 	"github.com/goadesign/goa/design/apidsl"
 	"github.com/goadesign/goa/middleware/security/jwt"
 	"github.com/spf13/afero"
@@ -17,11 +18,16 @@ type JWTValidator func(ctx context.Context) error
 
 var (
 	FS                   = afero.NewReadOnlyFs(afero.NewOsFs())
-	AuthorizationHeader  = "Authorization2"
-	JWT                  = apidsl.JWTSecurity("jwt", func() { apidsl.Header(AuthorizationHeader) })
+	AuthorizationHeader  = "Authorization"
 	DefaultJWTValidation = JWTValidatorFunc(func(_ context.Context) error { return nil })
 	KeyFileTimeout       = 30 * time.Second
 )
+
+func JWT() *design.SecuritySchemeDefinition {
+	return apidsl.JWTSecurity("jwt", func() {
+		apidsl.Header(AuthorizationHeader)
+	})
+}
 
 func JWTMiddleware(service *goa.Service, filename string, validator goa.Middleware, security *goa.JWTSecurity) (goa.Middleware, error) {
 	key, err := readKeyFromFS(service, filename)

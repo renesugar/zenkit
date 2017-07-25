@@ -3,6 +3,7 @@ package zenkit_test
 import (
 	"math/rand"
 
+	"github.com/goadesign/goa"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -27,3 +28,9 @@ func RandStringRunes(n int) string {
 	}
 	return string(b)
 }
+
+type NullLogAdapter struct{}
+
+func (a *NullLogAdapter) Info(msg string, keyvals ...interface{})   {}
+func (a *NullLogAdapter) Error(msg string, keyvals ...interface{})  {}
+func (a *NullLogAdapter) New(keyvals ...interface{}) goa.LogAdapter { return a }
