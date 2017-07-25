@@ -2,6 +2,7 @@ package zenkit_test
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 
 	"github.com/Sirupsen/logrus"
@@ -11,6 +12,14 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
+
+func TheTestFunction(ctx context.Context) {
+	defer LogEntryAndExit(ctx)()
+	logger := ContextLogger(ctx)
+	if logger != nil {
+		logger.Info("Inside!")
+	}
+}
 
 var _ = Describe("Logging", func() {
 
@@ -72,6 +81,35 @@ var _ = Describe("Logging", func() {
 			Ω(s).Should(ContainSubstring(fmt.Sprintf("badlevel=%s", level)))
 		})
 
+		It("should decline to reset the log level to the existing log level", func() {
+			logger := ContextLogger(svc.Context).Logger
+			var b bytes.Buffer
+			logger.Out = &b
+			SetLogLevel(svc, "debug")
+			b.Reset()
+
+			SetLogLevel(svc, "debug")
+			s := b.String()
+			Ω(s).Should(ContainSubstring("Requested log level is already active. Ignoring."))
+		})
+
+		It("should trace log appropriately", func() {
+			logger := ContextLogger(svc.Context).Logger
+			var b bytes.Buffer
+			logger.Out = &b
+			SetLogLevel(svc, "debug")
+			b.Reset()
+
+			TheTestFunction(svc.Context)
+			s := b.String()
+			Ω(s).Should(ContainSubstring("ENTER TheTestFunction()"))
+			Ω(s).Should(ContainSubstring("Inside!"))
+			Ω(s).Should(ContainSubstring("EXIT TheTestFunction()"))
+		})
+
+		It("shouldn't panic the trace logger if there's no logger defined", func() {
+			TheTestFunction(context.Background())
+		})
 	})
 
 })
