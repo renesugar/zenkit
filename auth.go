@@ -21,12 +21,16 @@ var (
 	AuthorizationHeader  = "Authorization"
 	DefaultJWTValidation = JWTValidatorFunc(func(_ context.Context) error { return nil })
 	KeyFileTimeout       = 30 * time.Second
+	localJWT             *design.SecuritySchemeDefinition
 )
 
 func JWT() *design.SecuritySchemeDefinition {
-	return apidsl.JWTSecurity("jwt", func() {
-		apidsl.Header(AuthorizationHeader)
-	})
+	if localJWT == nil {
+		localJWT = apidsl.JWTSecurity("jwt", func() {
+			apidsl.Header(AuthorizationHeader)
+		})
+	}
+	return localJWT
 }
 
 func JWTMiddleware(service *goa.Service, filename string, validator goa.Middleware, security *goa.JWTSecurity) (goa.Middleware, error) {
