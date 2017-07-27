@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/goadesign/goa"
-	"github.com/sirupsen/logrus"
+	"github.com/Sirupsen/logrus"
 	. "github.com/zenoss/zenkit"
 
 	. "github.com/onsi/ginkgo"

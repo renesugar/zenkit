@@ -5,7 +5,7 @@ import (
 
 	"github.com/goadesign/goa"
 	goalogrus "github.com/goadesign/goa/logging/logrus"
-	"github.com/sirupsen/logrus"
+	"github.com/Sirupsen/logrus"
 )
 
 var noop = func() {}
