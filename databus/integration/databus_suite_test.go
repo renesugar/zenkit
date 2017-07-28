@@ -2,6 +2,7 @@ package databus_test
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -18,8 +19,10 @@ import (
 )
 
 var (
-	harness test.Harness
-	logger  = test.TestLogger()
+	harness      test.Harness
+	testProducer sarama.SyncProducer
+	testConsumer sarama.Consumer
+	logger       = test.TestLogger()
 )
 
 func TestDatabus(t *testing.T) {
@@ -98,6 +101,23 @@ var _ = BeforeSuite(func() {
 	err = harness.Wait(KafkaHealthCheck(kafka), 30*time.Second)
 	Ω(err).ShouldNot(HaveOccurred())
 	logger.WithField("address", kafka).Infof("Kafka is ready")
+
+	oldresolver := net.DefaultResolver
+	net.DefaultResolver = &net.Resolver{
+		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
+			fmt.Println("Resolving", address)
+			if address == "kafka" {
+				addr, _ := harness.Resolve("kafka", 123)
+				address = addr[:len(addr)-4]
+			}
+			return oldresolver.Dial(ctx, network, address)
+		},
+	}
+
+	testProducer, err = sarama.NewSyncProducer([]string{kafka}, nil)
+	Ω(err).ShouldNot(HaveOccurred())
+	testConsumer, err = sarama.NewConsumer([]string{kafka}, nil)
+	Ω(err).ShouldNot(HaveOccurred())
 
 	// Schema health check
 	schemareg, err := harness.Resolve("kafka-schema-registry", 8081)
