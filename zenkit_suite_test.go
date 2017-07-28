@@ -19,16 +19,6 @@ func TestZenkit(t *testing.T) {
 
 }
 
-var letterRunes = []rune("abcdefghijklmnopqrstuvwxyz")
-
-func RandStringRunes(n int) string {
-	b := make([]rune, n)
-	for i := range b {
-		b[i] = letterRunes[rand.Intn(len(letterRunes))]
-	}
-	return string(b)
-}
-
 type NullLogAdapter struct{}
 
 func (a *NullLogAdapter) Info(msg string, keyvals ...interface{})   {}

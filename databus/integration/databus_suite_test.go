@@ -80,7 +80,7 @@ func SchemaRegistryHealthCheck(schemaaddr string) func() error {
 
 var _ = BeforeSuite(func() {
 	var err error
-	harness, err = test.NewDockerComposeHarness("integration-test", "docker-compose.yml")
+	harness, err = test.NewDockerComposeHarness(fmt.Sprintf("test-%s", test.RandString(4)), "docker-compose.yml")
 	Ω(err).ShouldNot(HaveOccurred())
 
 	Ω(harness.Start()).ShouldNot(HaveOccurred())
