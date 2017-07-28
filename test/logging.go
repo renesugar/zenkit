@@ -1,7 +1,7 @@
 package test
 
 import (
-	"github.com/sirupsen/logrus"
+	"github.com/Sirupsen/logrus"
 )
 
 var logger *logrus.Logger
