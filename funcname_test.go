@@ -4,6 +4,7 @@ import (
 	"math/rand"
 
 	. "github.com/zenoss/zenkit"
+	"github.com/zenoss/zenkit/test"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -39,7 +40,7 @@ var _ = Describe("Function name utility", func() {
 		BeforeEach(func() {
 			cache = NewFnNameCache()
 			ptr = uintptr(rand.Intn(1000))
-			val = RandStringRunes(8)
+			val = test.RandString(8)
 		})
 
 		It("should use the factory the first time", func() {

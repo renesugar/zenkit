@@ -14,6 +14,7 @@ import (
 	"github.com/goadesign/goa/goatest"
 	"github.com/goadesign/goa/middleware"
 	. "github.com/zenoss/zenkit"
+	"github.com/zenoss/zenkit/test"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -38,7 +39,7 @@ var _ = Describe("Service", func() {
 	BeforeEach(func() {
 		logBuf = gbytes.NewBuffer()
 		logger = log.New(logBuf, "", log.Ltime)
-		name = RandStringRunes(8)
+		name = test.RandString(8)
 		req, _ = http.NewRequest("", "http://example.com/", nil)
 		rw = httptest.NewRecorder()
 	})
@@ -117,7 +118,7 @@ var _ = Describe("Service", func() {
 	})
 
 	It("should log uncaught errors", func() {
-		errstr := RandStringRunes(8)
+		errstr := test.RandString(8)
 		handler := func(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
 			return errors.New(errstr)
 		}

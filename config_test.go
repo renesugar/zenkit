@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	. "github.com/zenoss/zenkit"
+	"github.com/zenoss/zenkit/test"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -28,7 +29,7 @@ var _ = Describe("Config", func() {
 	}
 
 	BeforeEach(func() {
-		prefix = RandStringRunes(8)
+		prefix = test.RandString(8)
 		cmd = &cobra.Command{Use: "c", Run: func(*cobra.Command, []string) {}}
 		viper.Reset()
 		viper.AutomaticEnv()
@@ -91,7 +92,7 @@ var _ = Describe("Config", func() {
 		})
 
 		It("should allow setting the tracing daemon via env var", func() {
-			daemon := RandStringRunes(10)
+			daemon := test.RandString(10)
 			setenv("TRACING_DAEMON", daemon)
 			Ω(viper.GetString(TracingDaemonConfig)).Should(Equal(daemon))
 		})
@@ -109,7 +110,7 @@ var _ = Describe("Config", func() {
 		})
 
 		It("should allow setting the tracing daemon via command line", func() {
-			daemon := RandStringRunes(10)
+			daemon := test.RandString(10)
 			err := cmd.ParseFlags([]string{"--tracing-daemon", daemon})
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(viper.GetString(TracingDaemonConfig)).Should(Equal(daemon))
@@ -134,7 +135,7 @@ var _ = Describe("Config", func() {
 		})
 
 		It("should allow setting the key file via env var", func() {
-			keyfile := RandStringRunes(10)
+			keyfile := test.RandString(10)
 			setenv("AUTH_KEY_FILE", keyfile)
 			Ω(viper.GetString(AuthKeyFileConfig)).Should(Equal(keyfile))
 		})
@@ -145,7 +146,7 @@ var _ = Describe("Config", func() {
 		})
 
 		It("should allow setting the key file via command line", func() {
-			keyfile := RandStringRunes(10)
+			keyfile := test.RandString(10)
 			err := cmd.ParseFlags([]string{"--auth-key-file", keyfile})
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(viper.Get(AuthKeyFileConfig)).Should(Equal(keyfile))

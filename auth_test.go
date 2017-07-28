@@ -17,6 +17,7 @@ import (
 	"github.com/goadesign/goa/dslengine"
 	"github.com/goadesign/goa/middleware/security/jwt"
 	. "github.com/zenoss/zenkit"
+	"github.com/zenoss/zenkit/test"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -59,7 +60,7 @@ var _ = Describe("Auth utilities", func() {
 		file, _ = ioutil.TempFile("", "zenkit-")
 		defer file.Close()
 		file.Write(secret)
-		svc = goa.New(RandStringRunes(8))
+		svc = goa.New(test.RandString(8))
 		svc.WithLogger(&NullLogAdapter{})
 		req, _ = http.NewRequest("", "http://example.com/", nil)
 		resp = httptest.NewRecorder()
@@ -111,7 +112,7 @@ var _ = Describe("Auth utilities", func() {
 	Context("context identity functions", func() {
 
 		It("should be able to pass an identity to the context", func() {
-			id = RandStringRunes(8)
+			id = test.RandString(8)
 			ident = &testIdentity{id}
 
 			ctx := WithIdentity(context.Background(), ident)
@@ -131,7 +132,7 @@ var _ = Describe("Auth utilities", func() {
 		})
 
 		It("should respect an existing authorization header", func() {
-			id = RandStringRunes(8)
+			id = test.RandString(8)
 			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", signedToken()))
 			h := getHandler(DefaultJWTValidation)
 			err := DevModeMiddleware(h)(context.Background(), resp, req)
@@ -166,7 +167,7 @@ var _ = Describe("Auth utilities", func() {
 		})
 
 		It("should create middleware that allows requests with a valid token", func() {
-			id = RandStringRunes(8)
+			id = test.RandString(8)
 			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", signedToken()))
 			err := getHandler(emptyMiddleware)(context.Background(), resp, req)
 			Ω(err).ShouldNot(HaveOccurred())
@@ -175,7 +176,7 @@ var _ = Describe("Auth utilities", func() {
 
 		Context("using the default validator middleware", func() {
 			It("should pass the identity through the context", func() {
-				id = RandStringRunes(8)
+				id = test.RandString(8)
 				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", signedToken()))
 				ctx := context.Background()
 				err := getHandler(DefaultJWTValidation)(ctx, resp, req)
@@ -191,7 +192,7 @@ var _ = Describe("Auth utilities", func() {
 				custom := func(ctx context.Context) error {
 					return TestError
 				}
-				id = RandStringRunes(8)
+				id = test.RandString(8)
 				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", signedToken()))
 				ctx := context.Background()
 				err := getHandler(JWTValidatorFunc(custom))(ctx, resp, req)
