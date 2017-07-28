@@ -1,11 +1,5 @@
 package databus
 
-import (
-	"io"
-
-	"github.com/karrick/goavro"
-)
-
 type Message interface {
 	// Topic is the Kafka topic to which this message will be published
 	Topic() string
@@ -15,15 +9,24 @@ type Message interface {
 	Value() []byte
 }
 
-type MessageFactory interface {
-	// Topic is the Kafka topic to which these messages are destined
-	Topic() string
-	// KeySchema is the registry subject for the schema of the key
-	KeySchema() string
-	// ValueSchema is the registry subject for the schema of the value
-	ValueSchema() string
-	// Codec is the Avro codec that will encode the message
-	Codec() *goavro.Codec
-	// Message produces an encoded message, ready to publish to Kafka
-	Message(key, value io.Reader) (Message, error)
+func NewMessage(topic string, key, value []byte) Message {
+	return &defaultMessage{topic, key, value}
+}
+
+type defaultMessage struct {
+	topic string
+	key   []byte
+	value []byte
+}
+
+func (m *defaultMessage) Topic() string {
+	return m.topic
+}
+
+func (m *defaultMessage) Key() []byte {
+	return m.key
+}
+
+func (m *defaultMessage) Value() []byte {
+	return m.value
 }
