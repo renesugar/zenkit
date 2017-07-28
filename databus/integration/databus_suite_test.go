@@ -108,5 +108,5 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
-	harness.Stop()
+	//harness.Stop()
 })
