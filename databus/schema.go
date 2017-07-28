@@ -2,10 +2,10 @@ package databus
 
 import (
 	schemaregistry "github.com/datamountaineer/schema-registry"
-	"github.com/linkedin/goavro"
+	"github.com/karrick/goavro"
 )
 
-func GetCodec(client schemaregistry.Client, subject string) (int, goavro.Codec, error) {
+func GetCodec(client schemaregistry.Client, subject string) (int, *goavro.Codec, error) {
 	schema, err := client.GetLatestSchema(subject)
 	if err != nil {
 		return 0, nil, err
