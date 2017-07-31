@@ -2,33 +2,56 @@ package databus
 
 import (
 	"github.com/Shopify/sarama"
+	"github.com/datamountaineer/schema-registry"
 )
 
-type MessageProducer interface {
-	Send(Message) error
+type DatabusProducer interface {
+	Send(interface{}, interface{}) error
 	Close() error
 }
 
-func NewMessageProducer(producer sarama.SyncProducer) MessageProducer {
-	return &kafkaProducer{
-		prod: producer,
+func NewDatabusProducer(brokers []string, schemaRegistry, topic, keySubject, valueSubject string) (DatabusProducer, error) {
+	schemaRegistryClient, err := schemaregistry.NewClient(schemaRegistry)
+	if err != nil {
+		return nil, err
 	}
+
+	messageFactory, err := NewMessageFactory(topic, keySubject, valueSubject, schemaRegistryClient)
+	if err != nil {
+		return nil, err
+	}
+
+	producer, err := sarama.NewSyncProducer(brokers, nil)
+	if err != nil {
+		return nil, err
+	}
+	return NewSaramaDatabusProducer(producer, messageFactory), nil
 }
 
-type kafkaProducer struct {
-	prod sarama.SyncProducer
+func NewSaramaDatabusProducer(producer sarama.SyncProducer, factory MessageFactory) DatabusProducer {
+	return &saramaDatabusProducer{producer, factory}
 }
 
-func (p *kafkaProducer) Send(msg Message) error {
-	_, _, err := p.prod.SendMessage(&sarama.ProducerMessage{
-		Topic: msg.Topic(),
-		Key:   sarama.ByteEncoder(msg.Key()),
-		Value: sarama.ByteEncoder(msg.Value()),
+type saramaDatabusProducer struct {
+	producer sarama.SyncProducer
+	factory  MessageFactory
+}
+
+func (s *saramaDatabusProducer) Send(key, value interface{}) error {
+	message, err := s.factory.Message(key, value)
+	if err != nil {
+		return err
+	}
+
+	_, _, err = s.producer.SendMessage(&sarama.ProducerMessage{
+		Topic: message.Topic(),
+		Key:   sarama.ByteEncoder(message.Key()),
+		Value: sarama.ByteEncoder(message.Value()),
 	})
 
 	return err
 }
 
-func (p *kafkaProducer) Close() error {
-	return p.prod.Close()
+func (s *saramaDatabusProducer) Close() error {
+	return s.producer.Close()
 }

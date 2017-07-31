@@ -3,10 +3,10 @@ package databus_test
 import (
 	"github.com/zenoss/zenkit/test"
 
+	"github.com/Shopify/sarama"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/zenoss/zenkit/databus"
-	"github.com/Shopify/sarama"
 )
 
 var _ = Describe("Producer", func() {
@@ -43,7 +43,5 @@ var _ = Describe("Producer", func() {
 
 		Ω(saramaMessage.Value).Should(Equal(value))
 	})
-
-
 
 })

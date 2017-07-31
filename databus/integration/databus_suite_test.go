@@ -15,6 +15,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/zenoss/zenkit/test"
 
+	"github.com/datamountaineer/schema-registry"
 	"testing"
 )
 

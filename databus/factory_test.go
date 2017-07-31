@@ -2,7 +2,6 @@ package databus_test
 
 import (
 	"encoding/json"
-	"errors"
 	"math/rand"
 
 	schemaregistry "github.com/datamountaineer/schema-registry"
@@ -13,16 +12,6 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var schemas = map[string]string{
-	"object-key":   `"string"`,
-	"object-value": `"int"`,
-}
-
-var ids = map[string]int{
-	"object-key":   1,
-	"object-value": 2,
-}
-
 var _ = Describe("Factory", func() {
 
 	var (
@@ -31,25 +20,19 @@ var _ = Describe("Factory", func() {
 		client     schemaregistry.Client
 		keySubject = "object-key"
 		valSubject = "object-value"
+		schemas    = map[string]string{
+			"object-key":   `"string"`,
+			"object-value": `"int"`,
+		}
+
+		ids = map[string]int{
+			"object-key":   1,
+			"object-value": 2}
 	)
 
 	BeforeEach(func() {
 		var err error
-		client = &schemaregistry.MockClient{
-			GetLatestSchemaFn: func(subject string) (schemaregistry.Schema, error) {
-				var empty schemaregistry.Schema
-				schema, ok := schemas[subject]
-				if !ok {
-					return empty, errors.New("Nope")
-				}
-				return schemaregistry.Schema{
-					Id:      ids[subject],
-					Schema:  schema,
-					Subject: subject,
-					Version: 1,
-				}, nil
-			},
-		}
+		client = GetSchemaRegistryMockClient(schemas, ids)
 		topic = test.RandString(8)
 		factory, err = NewMessageFactory(topic, keySubject, valSubject, client)
 		Ω(err).ShouldNot(HaveOccurred())

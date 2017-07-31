@@ -15,3 +15,7 @@
 
 *.coverprofile
 *.coverage.xml
+
+# Intellij junk
+*.iml
+.idea
