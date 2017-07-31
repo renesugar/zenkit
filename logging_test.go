@@ -5,8 +5,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/goadesign/goa"
 	"github.com/Sirupsen/logrus"
+	"github.com/goadesign/goa"
 	. "github.com/zenoss/zenkit"
 	"github.com/zenoss/zenkit/test"
 

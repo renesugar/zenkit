@@ -1,11 +1,11 @@
 package databus_test
 
 import (
-	. "github.com/zenoss/zenkit/databus"
 	"github.com/zenoss/zenkit/test"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	. "github.com/zenoss/zenkit/databus"
 )
 
 var _ = Describe("Producer", func() {
