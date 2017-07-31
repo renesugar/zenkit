@@ -1,3 +1,5 @@
+// +build integration
+
 package databus_test
 
 import (
@@ -14,9 +16,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/zenoss/zenkit/test"
-
-	"github.com/datamountaineer/schema-registry"
-	"testing"
 )
 
 var (
@@ -25,11 +24,6 @@ var (
 	testConsumer sarama.Consumer
 	logger       = test.TestLogger()
 )
-
-func TestDatabus(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Databus Integration Suite")
-}
 
 func ZooKeeperHealthCheck(zkaddr string) func() error {
 	return func() error {

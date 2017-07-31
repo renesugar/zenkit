@@ -32,6 +32,7 @@ test:
 	@ginkgo -r \
 		-cover \
 		-covermode=count \
+		-tags="unit integration" \
 		--skipPackage vendor
 	@gocov convert $(COVERAGE_PROFILE) | gocov-xml > $(COVERAGE_XML)
 endif

@@ -5,8 +5,9 @@ import (
 	. "github.com/onsi/gomega"
 
 	"errors"
-	"github.com/datamountaineer/schema-registry"
 	"testing"
+
+	"github.com/datamountaineer/schema-registry"
 )
 
 func TestDatabus(t *testing.T) {

@@ -1,3 +1,5 @@
+// +build integration
+
 package databus_test
 
 import (

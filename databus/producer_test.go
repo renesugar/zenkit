@@ -8,11 +8,12 @@ import (
 	"github.com/zenoss/zenkit/test"
 
 	"fmt"
+	"math/rand"
+	"strconv"
+
 	"github.com/datamountaineer/schema-registry"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"math/rand"
-	"strconv"
 )
 
 type mockSyncProducer struct {
