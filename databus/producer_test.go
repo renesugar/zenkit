@@ -8,6 +8,7 @@ import (
 	"github.com/zenoss/zenkit/test"
 
 	"fmt"
+	"github.com/datamountaineer/schema-registry"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"math/rand"
@@ -44,11 +45,20 @@ func (p *mockSyncProducer) SendMessage(msg *sarama.ProducerMessage) (int32, int6
 var _ = Describe("Producer", func() {
 
 	var (
-		producer        *mockSyncProducer
-		databusProducer DatabusProducer
-		topic           string
-		key             string
-		value           int
+		producer             *mockSyncProducer
+		databusProducer      DatabusProducer
+		topic                string
+		key                  string
+		value                int
+		schemas              map[string]string
+		ids                  map[string]int
+		schemaRegistryClient schemaregistry.Client
+	)
+
+	BeforeEach(func() {
+		topic = test.RandString(8)
+		key = test.RandString(8)
+		value = rand.Intn(100)
 
 		schemas = map[string]string{
 			"object-key":   `"string"`,
@@ -58,16 +68,10 @@ var _ = Describe("Producer", func() {
 		ids = map[string]int{
 			"object-key":   1,
 			"object-value": 2}
-	)
-
-	BeforeEach(func() {
-		topic = test.RandString(8)
-		key = test.RandString(8)
-		value = rand.Intn(100)
 
 		producer = &mockSyncProducer{messages: make([]*sarama.ProducerMessage, 0)}
-		client := GetSchemaRegistryMockClient(schemas, ids)
-		messageFactory, err := NewMessageFactory(topic, "object-key", "object-value", client)
+		schemaRegistryClient = GetSchemaRegistryMockClient(schemas, ids)
+		messageFactory, err := NewMessageFactory(topic, "object-key", "object-value", schemaRegistryClient)
 		Ω(err).ShouldNot(HaveOccurred())
 		databusProducer = NewSaramaDatabusProducer(producer, messageFactory)
 	})
@@ -91,6 +95,11 @@ var _ = Describe("Producer", func() {
 		e := errors.New("NOPE")
 		producer.err = e
 		err := databusProducer.Send(key, value)
+		Ω(err).Should(HaveOccurred())
+	})
+
+	It("should error if the message factory errors", func() {
+		err := databusProducer.Send(1, value)
 		Ω(err).Should(HaveOccurred())
 	})
 
