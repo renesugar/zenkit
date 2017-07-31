@@ -116,5 +116,7 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
+	testConsumer.Close()
+	testProducer.Close()
 	//harness.Stop()
 })

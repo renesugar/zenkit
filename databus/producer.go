@@ -1,6 +1,8 @@
 package databus
 
-import "github.com/Shopify/sarama"
+import (
+	"github.com/Shopify/sarama"
+)
 
 type MessageProducer interface {
 	Send(Message) error
@@ -23,6 +25,7 @@ func (p *kafkaProducer) Send(msg Message) error {
 		Key:   sarama.ByteEncoder(msg.Key()),
 		Value: sarama.ByteEncoder(msg.Value()),
 	})
+
 	return err
 }
 

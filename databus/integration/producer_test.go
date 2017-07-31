@@ -6,6 +6,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/zenoss/zenkit/databus"
+	"github.com/Shopify/sarama"
 )
 
 var _ = Describe("Producer", func() {
@@ -27,8 +28,22 @@ var _ = Describe("Producer", func() {
 	})
 
 	It("should send a message through a Kafka producer", func() {
-		err := msgProducer.Send(msg)
+		partConsumer, err := testConsumer.ConsumePartition(topic, 0, sarama.OffsetNewest)
 		Ω(err).ShouldNot(HaveOccurred())
+
+		defer partConsumer.Close()
+
+		err = msgProducer.Send(msg)
+		Ω(err).ShouldNot(HaveOccurred())
+
+		var saramaMessage *sarama.ConsumerMessage
+		Eventually(partConsumer.Messages()).Should(Receive(&saramaMessage))
+
+		Ω(saramaMessage.Key).Should(Equal(key))
+
+		Ω(saramaMessage.Value).Should(Equal(value))
 	})
+
+
 
 })
