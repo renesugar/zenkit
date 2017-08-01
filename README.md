@@ -113,7 +113,8 @@ The [zenoss/zenkit-build](https://hub.docker.com/r/zenoss/zenkit-build/)
 tests, build the service binaries, generate coverage reports, etc. Its purpose
 is to remove steps a developer must perform to get started. The Makefile in
 zenkit-template uses this image automatically.  _The image version of 
-zenkit-build is specified in .env file for any given microservice._
+zenkit-build is specified in `.env` and may be updated there when new versions 
+of zenkit-build are released._
 
 You may find it convenient, however, to install the testing tools locally
 rather than running them in a container. You may do this by running `make
