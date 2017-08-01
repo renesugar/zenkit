@@ -4,6 +4,7 @@ package databus_test
 
 import (
 	"bytes"
+	"os"
 
 	"errors"
 	"fmt"
@@ -113,5 +114,7 @@ var _ = BeforeSuite(func() {
 var _ = AfterSuite(func() {
 	testConsumer.Close()
 	testProducer.Close()
-	//harness.Stop()
+	if os.Getenv("KEEP_STACK_UP") == "" {
+		harness.Stop()
+	}
 })

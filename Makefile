@@ -1,45 +1,46 @@
-ZENKIT_VERSION       := 1.3
+ZENKIT_VERSION       := 1.3.1
+ROOTDIR              ?= $(CURDIR)
 GINKGO               := $(shell command -v ginkgo 2> /dev/null)
 PACKAGE              := github.com/zenoss/zenkit
 LOCAL_USER_ID        := $(shell id -u)
 BUILD_IMG            := zenoss/zenkit-build:$(ZENKIT_VERSION)
+COVERAGE_DIR         := coverage
 
-ifndef IN_DOCKER
-DOCKER_CMD           := docker run --rm -t \
-							-v $(GOPATH)/src:/go/src:rw \
-							-e LOCAL_USER_ID=$(LOCAL_USER_ID) \
-							-e IN_DOCKER=1 \
-							-w /go/src/$(PACKAGE) \
-							$(BUILD_IMG)
-else
-DOCKER_CMD           :=
-endif
+DOCKER_PARAMS        := --rm -v $(GOPATH)/src:/go/src:rw \
+							 -v /var/run/docker.sock:/var/run/docker.sock \
+							 -e LOCAL_USER_ID=$(LOCAL_USER_ID) \
+							 -w /go/src/$(PACKAGE)
+DOCKER_CMD           := docker run -t $(DOCKER_PARAMS) $(BUILD_IMG)
 
 .PHONY: default
 default: test
 
 .PHONY: test-containerized
 test-containerized:
-	@$(DOCKER_CMD) make test
+	@$(DOCKER_CMD) /bin/bash -c "go get ./... && make test"
 
 .PHONY: test
 ifndef GINKGO
 test: test-containerized
 else
-test: COVERAGE_PROFILE := zenkit.coverprofile
-test: COVERAGE_XML     := zenkit.coverage.xml
+test: COVERAGE_PROFILE := $(COVERAGE_DIR)/profile.out
+test: COVERAGE_HTML    := $(COVERAGE_DIR)/index.html
+test: COVERAGE_XML     := $(COVERAGE_DIR)/coverage.xml
 test:
-	@ginkgo -r \
+	@mkdir -p $(COVERAGE_DIR)
+	@GODEBUG=netdns=go ginkgo -r \
 		-cover \
 		-covermode=count \
-		-tags="unit integration" \
+		-tags="integration" \
 		--skipPackage vendor
+	@gocovmerge $$(find . -name \*.coverprofile) > $(COVERAGE_PROFILE)
+	@go tool cover -html=$(COVERAGE_PROFILE) -o $(COVERAGE_HTML)
 	@gocov convert $(COVERAGE_PROFILE) | gocov-xml > $(COVERAGE_XML)
 endif
 
 .PHONY: clean
 clean:
-	rm -rf zenkit.coverprofile zenkit.coverage.xml
+	rm -rf $(COVERAGE_DIR) **/*.coverprofile **/junit.xml
 
 local-dev:
 	go get -u github.com/onsi/ginkgo/ginkgo

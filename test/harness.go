@@ -110,7 +110,7 @@ func (h *dockerComposeHarness) Start() error {
 	h.oldResolver = net.DefaultResolver
 	net.DefaultResolver = &net.Resolver{
 		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
-			addr, _ := net.ResolveUDPAddr(network, addr)
+			addr, _ := net.ResolveUDPAddr("udp4", addr)
 			return net.DialUDP(network, nil, addr)
 		},
 	}

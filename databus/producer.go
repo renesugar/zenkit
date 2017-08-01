@@ -1,8 +1,6 @@
 package databus
 
 import (
-	"fmt"
-
 	"github.com/Shopify/sarama"
 	"github.com/datamountaineer/schema-registry"
 )
@@ -13,7 +11,6 @@ type DatabusProducer interface {
 }
 
 func NewDatabusProducer(brokers []string, schemaRegistry, topic, keySubject, valueSubject string) (DatabusProducer, error) {
-	fmt.Printf("schemaRegistry=%s\n", schemaRegistry)
 	schemaRegistryClient, err := schemaregistry.NewClient(schemaRegistry)
 	if err != nil {
 		return nil, err
