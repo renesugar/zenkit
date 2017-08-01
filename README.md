@@ -147,11 +147,15 @@ installed them, so you can keep running `make test`.
    may also be a useful reference.
 
 2. Define examples for your request and response objects in the design
-   specification.  This provides richer swagger documentation and allows api
-   tests to work.  Documentation on how to implement examples is found
-   [here](https://goa.design/reference/goa/design/apidsl/#func-example-a-name-apidsl-example-a) 
+   specification.  This provides richer swagger documentation and allows dredd
+   tests to work automatically.  Documentation on how to implement examples is 
+   found in the Goa documentation for 
+   [Example](https://goa.design/reference/goa/design/apidsl/#func-example-a-name-apidsl-example-a) 
    and 
-   [here](https://goa.design/reference/goa/design/apidsl/#func-metadata-a-name-apidsl-metadata-a).
+   [Metadata](https://goa.design/reference/goa/design/apidsl/#func-metadata-a-name-apidsl-metadata-a)
+   functions.  See [the provided example
+   resource](https://github.com/zenoss/zenkit-template/blob/master/template/design/resources.go)
+   for a functional example.
 
 3. `make`. This will generate scaffolding code in the `resources`
    directory, or modify existing scaffolding.
@@ -181,10 +185,18 @@ installed them, so you can keep running `make test`.
    arguments that you expect to trigger each response. See the [tests for the
    example resource](https://github.com/zenoss/zenkit-template/blob/master/template/resources/example_test.go) for a functional example.
 
-6. `make test`.  You may also run tests automatically on save by running
+7. `make test`.  You may also run tests automatically on save by running
    `ginkgo watch resources` or `ginkgo watch -r`.
 
-7. `make run` to rebuild the image and redeploy the service locally. This will
+8. Add hooks for api tests that will handle environment setup and teardown for
+   each api test. (TODO: need an example service that demonstrates this
+   implementation).
+
+9. `make api-test`. Starts service and dependencies (as defined in
+   docker-compose.yml) and runs dredd tests in a container within a private
+   network.
+
+10. `make run` to rebuild the image and redeploy the service locally. This will
    bring it up on port {{Port}}, allowing you to use `curl` or `httpie`.  You
    may also simply use `go build {{Name}}`, then run the resulting binary
    manually, although if supporting services are required, the `docker-compose`
