@@ -1,6 +1,8 @@
 package databus
 
 import (
+	"encoding/json"
+
 	schemaregistry "github.com/datamountaineer/schema-registry"
 	"github.com/karrick/goavro"
 )
@@ -18,6 +20,8 @@ type MessageFactory interface {
 	ValueCodec() *goavro.Codec
 	// Message produces an encoded message, ready to publish to Kafka
 	Message(key, value interface{}) (Message, error)
+	// Decode decodes a message received from Kafka into the types provided
+	Decode(msg Message, key, value interface{}) error
 }
 
 func NewMessageFactory(topic, keySubject, valueSubject string, client schemaregistry.Client) (MessageFactory, error) {
@@ -67,13 +71,39 @@ func (f *avroMessageFactory) ValueSubject() string {
 }
 
 func (f *avroMessageFactory) Message(key, value interface{}) (Message, error) {
-	encodedKey, err := f.keyCodec.TextualFromNative([]byte{}, key)
+	encodedKey, err := encode(f.keyCodec, key)
 	if err != nil {
 		return nil, err
 	}
-	encodedValue, err := f.valCodec.TextualFromNative([]byte{}, value)
+	encodedValue, err := encode(f.valCodec, value)
 	if err != nil {
 		return nil, err
 	}
 	return NewMessage(f.topic, encodedKey, encodedValue), nil
+}
+
+func (f *avroMessageFactory) Decode(msg Message, key, value interface{}) error {
+	if err := decode(f.keyCodec, msg.Key(), key); err != nil {
+		return err
+	}
+	return decode(f.valCodec, msg.Value(), value)
+}
+
+func encode(codec *goavro.Codec, data interface{}) ([]byte, error) {
+	marshalled, err := json.Marshal(data)
+	if err != nil {
+		return nil, err
+	}
+	var v interface{}
+	json.Unmarshal(marshalled, &v)
+	return codec.TextualFromNative([]byte{}, v)
+}
+
+func decode(codec *goavro.Codec, data []byte, ptr interface{}) error {
+	native, _, err := codec.NativeFromTextual(data)
+	if err != nil {
+		return err
+	}
+	marshalled, _ := json.Marshal(native)
+	return json.Unmarshal(marshalled, ptr)
 }
