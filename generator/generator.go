@@ -11,6 +11,8 @@ import (
 	"github.com/goadesign/goa/goagen/utils"
 )
 
+type DataFunc func(api *design.APIDefinition) (interface{}, error)
+
 // Generator defines the behavior of a resulting generated file
 type Generator struct {
 	target   string
@@ -21,16 +23,18 @@ type Generator struct {
 	funcs    template.FuncMap
 	fileTmpl string
 	genFiles []string
+	dataFunc DataFunc
 }
 
 // New creates a new Generator with the given arguments
-func New(target, outDir, outFile, fileTmpl, tmplName string) *Generator {
+func New(target, outDir, outFile, fileTmpl, tmplName string, dataFunc DataFunc) *Generator {
 	return &Generator{
 		target:   target,
 		outDir:   outDir,
 		outFile:  outFile,
 		tmplName: tmplName,
 		fileTmpl: fileTmpl,
+		dataFunc: dataFunc,
 	}
 }
 
@@ -81,9 +85,26 @@ func (g *Generator) generate(api *design.APIDefinition) error {
 	// Remove the old file, if it exists
 	outFile := filepath.Join(g.outDir, g.outFile)
 	os.Remove(outFile)
-	g.genFiles = append(g.genFiles, outFile)
+
+	// Create the data for the template now, so we avoid writing the file to
+	// disk if there's nothing in it
+	var data interface{}
+	if g.dataFunc != nil {
+		data, err = g.dataFunc(api)
+		if err != nil {
+			return err
+		}
+		if data == nil {
+			return nil
+		}
+	} else {
+		data = map[string]interface{}{
+			"API": api,
+		}
+	}
 
 	// Create the new source file
+	g.genFiles = append(g.genFiles, outFile)
 	file, err := codegen.SourceFileFor(outFile)
 	if err != nil {
 		return err
@@ -96,10 +117,6 @@ func (g *Generator) generate(api *design.APIDefinition) error {
 	}
 	file.WriteHeader("", g.target, imports)
 
-	// Do eeet
-	data := map[string]interface{}{
-		"API": api,
-	}
 	if err = file.ExecuteTemplate(g.tmplName, g.fileTmpl, g.funcs, data); err != nil {
 		return err
 	}

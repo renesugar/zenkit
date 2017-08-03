@@ -73,7 +73,7 @@ func Generate() ([]string, error) {
 		return nil, fmt.Errorf("invalid app package: %s", err)
 	}
 
-	ctrlRegGen := generator.New(target, outDir, "controller_reg.go", ctrlRegTmpl, "controller_reg")
+	ctrlRegGen := generator.New(target, outDir, "controller_reg.go", ctrlRegTmpl, "controller_reg", nil)
 	ctrlRegGen.AddImports("github.com/goadesign/goa", appPkgPath)
 	ctrlRegGen.SetFuncs(template.FuncMap{
 		"tempvar":   tempvar,
@@ -90,7 +90,7 @@ func Generate() ([]string, error) {
 		return []string{}, err
 	}
 
-	ctrlRegTestGen := generator.New(target+"_test", outDir, "controller_reg_test.go", ctrlRegTestTmpl, "controller_reg_test")
+	ctrlRegTestGen := generator.New(target+"_test", outDir, "controller_reg_test.go", ctrlRegTestTmpl, "controller_reg_test", nil)
 	ctrlRegTestGen.AddImports("github.com/goadesign/goa",
 		"github.com/onsi/ginkgo",
 		"github.com/onsi/gomega",
