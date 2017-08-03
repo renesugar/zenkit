@@ -2,12 +2,12 @@ package databus
 
 import (
 	"context"
-	"errors"
 	"reflect"
 
 	"github.com/Shopify/sarama"
 	cluster "github.com/bsm/sarama-cluster"
 	"github.com/datamountaineer/schema-registry"
+	"github.com/pkg/errors"
 )
 
 const STRUCT_KEY_TAG = "message-key"
@@ -17,7 +17,6 @@ const STRUCT_TAG_IDENTIFIER = "zenkit"
 var (
 	ErrInvalidMessageType = errors.New("invalid message type")
 	ErrConsumerClosed     = errors.New("consumer is closed")
-	ErrMessageNotSettable = errors.New("Message key or value is not settable")
 )
 
 type DatabusConsumer interface {
@@ -29,13 +28,13 @@ func NewDatabusConsumer(brokers []string, schemaRegistry, topic, keySubject, val
 	// Get our schema registry
 	schemaRegistryClient, err := schemaregistry.NewClient(schemaRegistry)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to create schema registry client")
 	}
 
 	// Get our message factory
 	messageFactory, err := NewMessageFactory(topic, keySubject, valueSubject, schemaRegistryClient)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to create message factory")
 	}
 
 	// Get our sarama cluster consumer
@@ -46,7 +45,7 @@ func NewDatabusConsumer(brokers []string, schemaRegistry, topic, keySubject, val
 
 	consumer, err := cluster.NewConsumer(brokers, groupId, []string{topic}, config)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to create cluster consumer")
 	}
 	return NewSaramaClusterDatabusConsumer(consumer, messageFactory)
 }
@@ -77,7 +76,7 @@ func (c *saramaClusterDatabusConsumer) Consume(ctx context.Context, v interface{
 	// Make sure what was passed in is a pointer to messageType
 	keyField, valueField, err := c.validateType(v)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	// Get errors and notifications first
@@ -100,16 +99,16 @@ func (c *saramaClusterDatabusConsumer) Consume(ctx context.Context, v interface{
 		if more {
 			err := c.decodeMessage(msg, v, keyField, valueField)
 			if err != nil {
-				return err
+				return errors.Wrap(err, "failed to decode message")
 			}
 
 			c.con.MarkOffset(msg, "") // mark message as processed
 			return nil
 		} else {
-			return ErrConsumerClosed
+			return errors.Wrap(ErrConsumerClosed, "messages channel closed")
 		}
 	case <-ctx.Done():
-		return ErrConsumerClosed
+		return errors.Wrap(ErrConsumerClosed, "context is cancelled")
 	}
 }
 
@@ -124,11 +123,11 @@ func (c *saramaClusterDatabusConsumer) validateType(message interface{}) (int, i
 	//   `zenkit:"message-value"`
 	messageType := reflect.TypeOf(message)
 	if messageType.Kind() != reflect.Ptr {
-		return 0, 0, ErrInvalidMessageType
+		return 0, 0, errors.Wrap(ErrInvalidMessageType, "type is not a pointer")
 	}
 	mType := messageType.Elem()
 	if mType.Kind() != reflect.Struct {
-		return 0, 0, ErrInvalidMessageType
+		return 0, 0, errors.Wrap(ErrInvalidMessageType, "type does not point to a struct")
 	}
 	keyField := -1
 	valueField := -1
@@ -142,15 +141,15 @@ func (c *saramaClusterDatabusConsumer) validateType(message interface{}) (int, i
 	}
 
 	if keyField < 0 || valueField < 0 {
-		return 0, 0, ErrInvalidMessageType
+		return 0, 0, errors.Wrap(ErrInvalidMessageType, "missing key or value field")
 	}
 
 	if !reflect.ValueOf(message).Elem().Field(keyField).CanSet() {
-		return 0, 0, ErrInvalidMessageType
+		return 0, 0, errors.Wrap(ErrInvalidMessageType, "key field is not settable")
 	}
 
 	if !reflect.ValueOf(message).Elem().Field(valueField).CanSet() {
-		return 0, 0, ErrInvalidMessageType
+		return 0, 0, errors.Wrap(ErrInvalidMessageType, "value field is not settable")
 	}
 
 	return keyField, valueField, nil
@@ -167,7 +166,7 @@ func (c *saramaClusterDatabusConsumer) decodeMessage(rawMsg *sarama.ConsumerMess
 	value := reflect.New(messageType.Field(valueField).Type).Interface()
 	err := c.messageFactory.Decode(wrappedMessage, key, value)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to decode key or value")
 	}
 
 	// Populate v with the key and value

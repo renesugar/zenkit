@@ -1,22 +1,20 @@
 package databus_test
 
 import (
-	"github.com/Shopify/sarama"
-	. "github.com/zenoss/zenkit/databus"
-	"github.com/zenoss/zenkit/test"
-
+	"context"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"strconv"
 
-	"context"
-	"encoding/json"
-	"errors"
-
+	"github.com/Shopify/sarama"
 	"github.com/bsm/sarama-cluster"
 	"github.com/datamountaineer/schema-registry"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/pkg/errors"
+	. "github.com/zenoss/zenkit/databus"
+	"github.com/zenoss/zenkit/test"
 )
 
 func newMockClusterConsumer(chanSize int) *mockClusterConsumer {
@@ -176,7 +174,7 @@ var _ = Describe("Consumer", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 			Eventually(done).Should(BeClosed())
 			Eventually(clusterConsumer.Messages()).Should(BeClosed())
-			Ω(consumeErr).Should(Equal(ErrConsumerClosed))
+			Ω(errors.Cause(consumeErr)).Should(Equal(ErrConsumerClosed))
 		})
 
 		It("should fail if we pass a value that isn't a pointer", func() {
@@ -314,7 +312,7 @@ var _ = Describe("Consumer", func() {
 
 			cancel()
 			Eventually(done).Should(BeClosed())
-			Ω(err).Should(Equal(ErrConsumerClosed))
+			Ω(errors.Cause(err)).Should(Equal(ErrConsumerClosed))
 		})
 
 		It("should return immediately if the context is cancelled first", func() {
@@ -331,7 +329,7 @@ var _ = Describe("Consumer", func() {
 				}
 			}()
 			Eventually(done).Should(BeClosed())
-			Ω(err).Should(Equal(ErrConsumerClosed))
+			Ω(errors.Cause(err)).Should(Equal(ErrConsumerClosed))
 		})
 	})
 

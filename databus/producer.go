@@ -3,6 +3,7 @@ package databus
 import (
 	"github.com/Shopify/sarama"
 	"github.com/datamountaineer/schema-registry"
+	"github.com/pkg/errors"
 )
 
 type DatabusProducer interface {
@@ -13,17 +14,17 @@ type DatabusProducer interface {
 func NewDatabusProducer(brokers []string, schemaRegistry, topic, keySubject, valueSubject string) (DatabusProducer, error) {
 	schemaRegistryClient, err := schemaregistry.NewClient(schemaRegistry)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to create schema registry client")
 	}
 
 	messageFactory, err := NewMessageFactory(topic, keySubject, valueSubject, schemaRegistryClient)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to create message factory")
 	}
 
 	producer, err := sarama.NewSyncProducer(brokers, nil)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to create sarama producer")
 	}
 	return NewSaramaDatabusProducer(producer, messageFactory), nil
 }
@@ -40,7 +41,7 @@ type saramaDatabusProducer struct {
 func (s *saramaDatabusProducer) Send(key, value interface{}) error {
 	message, err := s.factory.Message(key, value)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get message from factory")
 	}
 
 	_, _, err = s.producer.SendMessage(&sarama.ProducerMessage{
@@ -49,7 +50,7 @@ func (s *saramaDatabusProducer) Send(key, value interface{}) error {
 		Value: sarama.ByteEncoder(message.Value()),
 	})
 
-	return err
+	return errors.Wrap(err, "failed to send message via sarama producer")
 }
 
 func (s *saramaDatabusProducer) Close() error {

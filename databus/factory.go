@@ -5,6 +5,7 @@ import (
 
 	schemaregistry "github.com/datamountaineer/schema-registry"
 	"github.com/karrick/goavro"
+	"github.com/pkg/errors"
 )
 
 type MessageFactory interface {
@@ -27,11 +28,11 @@ type MessageFactory interface {
 func NewMessageFactory(topic, keySubject, valueSubject string, client schemaregistry.Client) (MessageFactory, error) {
 	_, keyCodec, err := GetCodec(client, keySubject)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "failed to get codec for key subject: %s", keySubject)
 	}
 	_, valCodec, err := GetCodec(client, valueSubject)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "failed to get codec for value subject: %s", valueSubject)
 	}
 	return &avroMessageFactory{
 		topic:      topic,
@@ -73,26 +74,29 @@ func (f *avroMessageFactory) ValueSubject() string {
 func (f *avroMessageFactory) Message(key, value interface{}) (Message, error) {
 	encodedKey, err := encode(f.keyCodec, key)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to encode key")
 	}
 	encodedValue, err := encode(f.valCodec, value)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to encode value")
 	}
 	return NewMessage(f.topic, encodedKey, encodedValue), nil
 }
 
 func (f *avroMessageFactory) Decode(msg Message, key, value interface{}) error {
 	if err := decode(f.keyCodec, msg.Key(), key); err != nil {
-		return err
+		return errors.Wrap(err, "failed to decode key")
 	}
-	return decode(f.valCodec, msg.Value(), value)
+	if err := decode(f.valCodec, msg.Value(), value); err != nil {
+		return errors.Wrap(err, "failed to decode value")
+	}
+	return nil
 }
 
 func encode(codec *goavro.Codec, data interface{}) ([]byte, error) {
 	marshalled, err := json.Marshal(data)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to marshal data to json")
 	}
 	var v interface{}
 	json.Unmarshal(marshalled, &v)
@@ -102,7 +106,7 @@ func encode(codec *goavro.Codec, data interface{}) ([]byte, error) {
 func decode(codec *goavro.Codec, data []byte, ptr interface{}) error {
 	native, _, err := codec.NativeFromTextual(data)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get native value from text")
 	}
 	marshalled, _ := json.Marshal(native)
 	return json.Unmarshal(marshalled, ptr)

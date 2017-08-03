@@ -13,6 +13,7 @@ import (
 	"github.com/datamountaineer/schema-registry"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/pkg/errors"
 	. "github.com/zenoss/zenkit/databus"
 	"github.com/zenoss/zenkit/test"
 )
@@ -176,7 +177,7 @@ var _ = Describe("Consumer", func() {
 				err = databusConsumer.Close()
 				Ω(err).ShouldNot(HaveOccurred())
 				Eventually(done).Should(BeClosed())
-				Ω(consumeErr).Should(Equal(ErrConsumerClosed))
+				Ω(errors.Cause(consumeErr)).Should(Equal(ErrConsumerClosed))
 			})
 
 			Context("with a different topic", func() {
