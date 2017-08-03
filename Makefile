@@ -6,8 +6,8 @@ LOCAL_USER_ID        := $(shell id -u)
 BUILD_IMG            := zenoss/zenkit-build:$(ZENKIT_VERSION)
 COVERAGE_DIR         := coverage
 
-DOCKER_PARAMS        := --rm -v $(ROOTDIR):/go/src/$(PACKAGE):rw \
-							 -v /var/run/docker.sock:/var/run/docker.sock \
+DOCKER_PARAMS        := --rm -v /var/run/docker.sock:/var/run/docker.sock \
+						     -v $(ROOTDIR):/go/src/$(PACKAGE):rw \
 							 -e LOCAL_USER_ID=$(LOCAL_USER_ID) \
 							 -w /go/src/$(PACKAGE)
 DOCKER_CMD           := docker run -t $(DOCKER_PARAMS) $(BUILD_IMG)
