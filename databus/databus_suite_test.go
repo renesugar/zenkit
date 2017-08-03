@@ -2,6 +2,7 @@ package databus_test
 
 import (
 	. "github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
 
 	"errors"
@@ -12,7 +13,8 @@ import (
 
 func TestDatabus(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Databus Suite")
+	junitReporter := reporters.NewJUnitReporter("junit.xml")
+	RunSpecsWithDefaultAndCustomReporters(t, "Databus Suite", []Reporter{junitReporter})
 }
 
 func GetSchemaRegistryMockClient(schemas map[string]string, ids map[string]int) schemaregistry.Client {
