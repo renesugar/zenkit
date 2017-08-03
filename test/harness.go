@@ -2,7 +2,6 @@ package test
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -17,6 +16,7 @@ import (
 	"github.com/docker/libcompose/labels"
 	"github.com/docker/libcompose/project"
 	"github.com/docker/libcompose/project/options"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -53,7 +53,7 @@ func NewDockerComposeHarness(name string, dockerComposeFiles ...string) (Harness
 		},
 	}, &config.ParseOptions{})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "unable to create libcompose project")
 	}
 	return &dockerComposeHarness{
 		name:    name,
@@ -63,14 +63,14 @@ func NewDockerComposeHarness(name string, dockerComposeFiles ...string) (Harness
 
 func (h *dockerComposeHarness) Start() error {
 	if err := h.project.Up(context.Background(), options.Up{}); err != nil {
-		return err
+		return errors.Wrap(err, "unable to bring up the libcompose project")
 	}
 	return nil
 }
 
 func (h *dockerComposeHarness) Stop() error {
 	if err := h.project.Down(context.Background(), options.Down{}); err != nil {
-		return err
+		return errors.Wrap(err, "unable to shut down the libcompose project")
 	}
 	return nil
 }
@@ -78,15 +78,15 @@ func (h *dockerComposeHarness) Stop() error {
 func (h *dockerComposeHarness) Resolve(service string, port uint64) (string, error) {
 	client, err := lclient.Create(lclient.Options{})
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "unable to create Docker client")
 	}
 	filter := labels.And(labels.PROJECT.Eq(h.name), labels.SERVICE.Eq(service))
 	containers, err := container.ListByFilter(context.Background(), client, filter)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "unable to filter service containers")
 	}
 	if len(containers) == 0 {
-		return "", ErrNoContainerFound
+		return "", errors.WithStack(ErrNoContainerFound)
 	}
 	net := containers[0].NetworkSettings.Networks["bridge"]
 	return fmt.Sprintf("%s:%d", net.IPAddress, port), nil
@@ -98,7 +98,7 @@ func (h *dockerComposeHarness) Wait(healthcheck func() error, timeout time.Durat
 	boff.InitialInterval = 500 * time.Millisecond
 	boff.Multiplier = 1.0
 	if err := backoff.Retry(healthcheck, boff); err != nil {
-		return err
+		return errors.Wrap(err, "health check didn't pass within the timeout")
 	}
 	return nil
 }

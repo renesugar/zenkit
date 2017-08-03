@@ -11,6 +11,7 @@ import (
 	"github.com/goadesign/goa/design"
 	"github.com/goadesign/goa/design/apidsl"
 	"github.com/goadesign/goa/middleware/security/jwt"
+	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 )
 
@@ -36,7 +37,7 @@ func JWT() *design.SecuritySchemeDefinition {
 func JWTMiddleware(service *goa.Service, filename string, validator goa.Middleware, security *goa.JWTSecurity) (goa.Middleware, error) {
 	key, err := readKeyFromFS(service, filename)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "couldn't read key from filesystem")
 	}
 	resolver := jwt.NewSimpleResolver([]jwt.Key{key})
 	return jwt.New(resolver, validator, security), nil
@@ -46,7 +47,7 @@ func JWTValidatorFunc(m JWTValidator) goa.Middleware {
 	return func(h goa.Handler) goa.Handler {
 		return func(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
 			if err := m(ctx); err != nil {
-				return err
+				return errors.WithStack(err)
 			}
 			token := jwt.ContextJWT(ctx)
 			ident := &tokenIdentity{claims: token.Claims.(jwtgo.MapClaims)}
@@ -97,7 +98,7 @@ func readKeyFromFS(service *goa.Service, filename string) ([]byte, error) {
 		data, err := afero.ReadFile(FS, filename)
 		if err != nil {
 			service.LogError("Unable to load auth key. Retrying.", "keyfile", filename, "err", err)
-			return err
+			return errors.Wrap(err, "unable to load auth key")
 		}
 		key = data
 		return nil
@@ -106,7 +107,7 @@ func readKeyFromFS(service *goa.Service, filename string) ([]byte, error) {
 	boff := backoff.NewExponentialBackOff()
 	boff.MaxElapsedTime = KeyFileTimeout
 	if err := backoff.Retry(readKey, boff); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "unable to load auth key within the timeout")
 	}
 	return key, nil
 }
