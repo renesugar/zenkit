@@ -91,7 +91,7 @@ func (g *Generator) generate(api *design.APIDefinition) error {
 
 	// Add imports
 	imports := make([]*codegen.ImportSpec, 0)
-	for importStr := range g.imports {
+	for _, importStr := range g.imports {
 		imports = append(imports, codegen.SimpleImport(importStr))
 	}
 	file.WriteHeader("", g.target, imports)

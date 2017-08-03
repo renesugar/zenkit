@@ -3,9 +3,9 @@ package controllerreg
 import (
 	"flag"
 	"fmt"
-	"html/template"
 	"os"
 	"path/filepath"
+	"text/template"
 
 	"github.com/goadesign/goa/design"
 	"github.com/goadesign/goa/goagen/codegen"
@@ -23,14 +23,15 @@ func MountAllControllers(service *goa.Service) {
 `
 
 const ctrlRegTestTmpl = `
-var _ = Describe("ControllerReg", func() {
+var _ = ginkgo.Describe("ControllerReg", func() {
 	var (
 		svc = goa.New("controller-test")
 	)
-	Context("when mounting all controllers", func() {
-		MountAllControllers(svc)
+	ginkgo.Context("when mounting all controllers", func() {
+		resources.MountAllControllers(svc)
+		{{ $api := .API }}
 		{{ range $name, $res := $api.Resources }}{{ $name := goify $res.Name true }}
-			It("should mount the {{$res.Name}} controller", func() {
+			ginkgo.It("should mount the {{$res.Name}} controller", func() {
 				// Put your logic here to test that the controller is mounted
 			})
 		{{ end }}
@@ -74,36 +75,32 @@ func Generate() ([]string, error) {
 
 	ctrlRegGen := generator.New(target, outDir, "controller_reg.go", ctrlRegTmpl, "controller_reg")
 	ctrlRegGen.AddImports("github.com/goadesign/goa", appPkgPath)
-	ctrlRegGen.SetFunc(template.FuncMap{
+	ctrlRegGen.SetFuncs(template.FuncMap{
 		"tempvar":   tempvar,
-		"targetPkg": func() string { return g.appPkg },
+		"targetPkg": func() string { return appPkg },
 	})
-	ctrlRegGen.Generate(design.Design)
+	ctrlFiles, err := ctrlRegGen.Generate(design.Design)
+	if err != nil {
+		return []string{}, err
+	}
+	outFiles = append(outFiles, ctrlFiles...)
 
-	ctrlRegTestGen := generator.New(target+"_test", outDir, "controller_reg_test.go", ctrlRegTmpl, "controller_reg_test")
-	ctrlRegGen.AddImports("github.com/goadesign/goa",
-		". github.com/onsi/ginkgo",
-		". github.com/onsi/gomega",
-		appPkgPath,
-	)
-	ctrlRegGen.Generate(design.Design)
-
-	gTargetTest := &generate.Generator{
-		outDir:       outDir,
-		outFile:      "controller_reg_test.go",
-		target:       target,
-		templateName: "controller_reg_test",
-		imports: {
-			"github.com/goadesign/goa",
-			". github.com/onsi/ginkgo",
-			". " + gTarget.outDir + "/" + gTarget.target,
-		},
-		funcs: template.FuncMap{
-			"tempvar":   tempvar,
-			"targetPkg": func() string { return g.appPkg },
-		},
-		fileTemplate: ctrlRegTempl,
+	rcsPkgPath, err := codegen.PackagePath(outDir)
+	if err != nil {
+		return []string{}, err
 	}
 
-	return outFiles
+	ctrlRegTestGen := generator.New(target+"_test", outDir, "controller_reg_test.go", ctrlRegTestTmpl, "controller_reg_test")
+	ctrlRegTestGen.AddImports("github.com/goadesign/goa",
+		"github.com/onsi/ginkgo",
+		"github.com/onsi/gomega",
+		rcsPkgPath,
+	)
+	ctrlTestFiles, err := ctrlRegTestGen.Generate(design.Design)
+	if err != nil {
+		return []string{}, err
+	}
+	outFiles = append(outFiles, ctrlTestFiles...)
+
+	return outFiles, nil
 }
