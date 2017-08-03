@@ -2,7 +2,6 @@ package zenkit_test
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -16,6 +15,7 @@ import (
 	"github.com/goadesign/goa/design/apidsl"
 	"github.com/goadesign/goa/dslengine"
 	"github.com/goadesign/goa/middleware/security/jwt"
+	"github.com/pkg/errors"
 	. "github.com/zenoss/zenkit"
 	"github.com/zenoss/zenkit/test"
 
@@ -89,6 +89,7 @@ var _ = Describe("Auth utilities", func() {
 	}
 
 	assertSecurityError := func(err error, msg string) {
+		err = errors.Cause(err)
 		errResp, ok := err.(*goa.ErrorResponse)
 		Ω(ok).Should(BeTrue())
 		Ω(errResp.Status).Should(Equal(401))
@@ -197,7 +198,7 @@ var _ = Describe("Auth utilities", func() {
 				ctx := context.Background()
 				err := getHandler(JWTValidatorFunc(custom))(ctx, resp, req)
 				Ω(err).Should(HaveOccurred())
-				Ω(err).Should(Equal(TestError))
+				Ω(errors.Cause(err)).Should(Equal(TestError))
 			})
 		})
 
