@@ -12,6 +12,7 @@ import (
 
 	"github.com/goadesign/goa/design"
 	"github.com/goadesign/goa/goagen/codegen"
+	genapp "github.com/goadesign/goa/goagen/gen_app"
 	"github.com/zenoss/zenkit/generator"
 )
 
@@ -48,7 +49,7 @@ func Generate() ([]string, error) {
 	set.String("design", "", "")
 	set.StringVar(&outDir, "out", "", "")
 	set.StringVar(&ver, "version", "", "")
-	set.StringVar(&target, "pkg", "resources", "")
+	set.StringVar(&target, "pkg", "test", "")
 	set.StringVar(&appPkg, "app", "app", "")
 	set.Parse(os.Args[2:])
 
@@ -81,9 +82,9 @@ func Generate() ([]string, error) {
 						tests = append(tests, &WSTest{
 							Name:           fmt.Sprintf("%s%sWSTestHelper", actionName, ctrlName),
 							ActionName:     actionName,
-							ControllerName: fmt.Sprintf("%s.%sController", g.appPkg, ctrlName),
+							ControllerName: fmt.Sprintf("%s.%sController", appPkg, ctrlName),
 							ContextVarName: fmt.Sprintf("%sCtx", varName),
-							ContextType:    fmt.Sprintf("%s.New%s%sContext", g.appPkg, actionName, ctrlName),
+							ContextType:    fmt.Sprintf("%s.New%s%sContext", appPkg, actionName, ctrlName),
 							Params:         path,
 							QueryParams:    query,
 							Headers:        header,
