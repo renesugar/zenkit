@@ -85,22 +85,9 @@ func (g *Generator) generate(api *design.APIDefinition) error {
 	// Remove the old file, if it exists
 	outFile := filepath.Join(g.outDir, g.outFile)
 	os.Remove(outFile)
-	g.genFiles = append(g.genFiles, outFile)
 
-	// Create the new source file
-	file, err := codegen.SourceFileFor(outFile)
-	if err != nil {
-		return err
-	}
-
-	// Add imports
-	imports := make([]*codegen.ImportSpec, 0)
-	for _, importStr := range g.imports {
-		imports = append(imports, codegen.SimpleImport(importStr))
-	}
-	file.WriteHeader("", g.target, imports)
-
-	// Do eeet
+	// Create the data for the template now, so we avoid writing the file to
+	// disk if there's nothing in it
 	var data interface{}
 	if g.dataFunc != nil {
 		data, err = g.dataFunc(api)
@@ -115,6 +102,21 @@ func (g *Generator) generate(api *design.APIDefinition) error {
 			"API": api,
 		}
 	}
+
+	// Create the new source file
+	g.genFiles = append(g.genFiles, outFile)
+	file, err := codegen.SourceFileFor(outFile)
+	if err != nil {
+		return err
+	}
+
+	// Add imports
+	imports := make([]*codegen.ImportSpec, 0)
+	for _, importStr := range g.imports {
+		imports = append(imports, codegen.SimpleImport(importStr))
+	}
+	file.WriteHeader("", g.target, imports)
+
 	if err = file.ExecuteTemplate(g.tmplName, g.fileTmpl, g.funcs, data); err != nil {
 		return err
 	}
