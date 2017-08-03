@@ -90,7 +90,7 @@ func (g *Generator) generate(api *design.APIDefinition) error {
 	// disk if there's nothing in it
 	var data interface{}
 	if g.dataFunc != nil {
-		data, err = g.dataFunc(api)
+		data, err := g.dataFunc(api)
 		if err != nil {
 			return err
 		}
@@ -117,7 +117,7 @@ func (g *Generator) generate(api *design.APIDefinition) error {
 	}
 	file.WriteHeader("", g.target, imports)
 
-	if err = file.ExecuteTemplate(g.tmplName, g.fileTmpl, g.funcs, data); err != nil {
+	if err := file.ExecuteTemplate(g.tmplName, g.fileTmpl, g.funcs, data); err != nil {
 		return err
 	}
 	return file.FormatCode()
