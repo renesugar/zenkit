@@ -9,6 +9,7 @@ up and running with an immediately deployable microservice in under a minute.
 ## Quick Reference
 * _`make`_ to regenerate code after modifying `design/*.go`
 * _`make test`_ to run tests
+* _`make api-test`_ to run api tests
 * _`make run`_ to run the service using docker-compose
 * _`make build`_ to build the image
 * _`make vendor`_ to update dependencies based on `glide.yaml`
@@ -112,7 +113,9 @@ The [zenoss/zenkit-build](https://hub.docker.com/r/zenoss/zenkit-build/)
 ([GitHub](https://github.com/zenoss/zenkit-build)) Docker image is used to run
 tests, build the service binaries, generate coverage reports, etc. Its purpose
 is to remove steps a developer must perform to get started. The Makefile in
-zenkit-template uses this image automatically.
+zenkit-template uses this image automatically.  _The image version of 
+zenkit-build is specified in `.env` and may be updated there when new versions 
+of zenkit-build are released._
 
 You may find it convenient, however, to install the testing tools locally
 rather than running them in a container. You may do this by running `make
@@ -135,6 +138,7 @@ installed them, so you can keep running `make test`.
 * [Logrus](https://github.com/sirupsen/logrus) for structured logging.
 * [Ginkgo](https://onsi.github.io/ginkgo/) and
   [Gomega](https://onsi.github.io/gomega) for testing.
+* [Dredd](http://dredd.readthedocs.io/en/latest/) for api tests.
 
 ## Microservice Development
 1. Add or modify resources and actions in `design/resources.go`, using [Goa's
@@ -142,13 +146,24 @@ installed them, so you can keep running `make test`.
    [goa-cellar](https://github.com/goadesign/goa-cellar) example implementation
    may also be a useful reference.
 
-2. `make`. This will generate scaffolding code in the `resources`
+2. Define examples for your request and response objects in the design
+   specification.  This provides richer swagger documentation and allows dredd
+   tests to work automatically.  Documentation on how to implement examples is 
+   found in the Goa documentation for 
+   [Example](https://goa.design/reference/goa/design/apidsl/#func-example-a-name-apidsl-example-a) 
+   and 
+   [Metadata](https://goa.design/reference/goa/design/apidsl/#func-metadata-a-name-apidsl-metadata-a)
+   functions.  See [the provided example
+   resource](https://github.com/zenoss/zenkit-template/blob/master/template/design/resources.go)
+   for a functional example.
+
+3. `make`. This will generate scaffolding code in the `resources`
    directory, or modify existing scaffolding.
 
    Note: Goa generates _all_ the generated code under `resources/app`. Don't
    bother modifying it if you wish to avoid needless frustration.
 
-3. Implement the resource action you've just defined. You'll find commented
+4. Implement the resource action you've just defined. You'll find commented
    body in the boilerplate methods:
 
         // ControllerName_Action: start_implement
@@ -161,7 +176,7 @@ installed them, so you can keep running `make test`.
    stuff on the outside of those comments alone. This allows `goagen` to
    regenerate the scaffolding around your logic as needed.
 
-4. Add tests for your new code. There may already be a `CONTROLLER_test.go`
+5. Add tests for your new code. There may already be a `CONTROLLER_test.go`
    defined. If not, run `ginkgo generate CONTROLLER`, where `CONTROLLER` is, of
    course, the name of the Go file containing your controller implementations.
    Goa generates test helpers for all resources to validate the contract, so
@@ -170,10 +185,18 @@ installed them, so you can keep running `make test`.
    arguments that you expect to trigger each response. See the [tests for the
    example resource](https://github.com/zenoss/zenkit-template/blob/master/template/resources/example_test.go) for a functional example.
 
-5. `make test`.  You may also run tests automatically on save by running
+7. `make test`.  You may also run tests automatically on save by running
    `ginkgo watch resources` or `ginkgo watch -r`.
 
-6. `make run` to rebuild the image and redeploy the service locally. This will
+8. Add hooks for api tests that will handle environment setup and teardown for
+   each api test. (TODO: need an example service that demonstrates this
+   implementation).
+
+9. `make api-test`. Starts service and dependencies (as defined in
+   docker-compose.yml) and runs dredd tests in a container within a private
+   network.
+
+10. `make run` to rebuild the image and redeploy the service locally. This will
    bring it up on port {{Port}}, allowing you to use `curl` or `httpie`.  You
    may also simply use `go build {{Name}}`, then run the resulting binary
    manually, although if supporting services are required, the `docker-compose`
