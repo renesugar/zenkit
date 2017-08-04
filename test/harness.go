@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"net"
+
 	"github.com/cenkalti/backoff"
 	"github.com/docker/libcompose/config"
 	"github.com/docker/libcompose/docker"
@@ -16,6 +18,7 @@ import (
 	"github.com/docker/libcompose/labels"
 	"github.com/docker/libcompose/project"
 	"github.com/docker/libcompose/project/options"
+	"github.com/miekg/dns"
 	"github.com/pkg/errors"
 )
 
@@ -36,15 +39,52 @@ type Harness interface {
 }
 
 type dockerComposeHarness struct {
-	name    string
-	project project.APIProject
+	name        string
+	project     project.APIProject
+	dns         *dns.Server
+	oldResolver *net.Resolver
+	ctx         context.Context
 }
 
 func normalizeName(name string) string {
 	return nameRegexp.ReplaceAllString(strings.ToLower(name), "")
 }
 
+func (h *dockerComposeHarness) handleDNS(w dns.ResponseWriter, r *dns.Msg) {
+	var m dns.Msg
+	m.SetReply(r)
+	m.Compress = false
+	switch r.Opcode {
+	case dns.OpcodeQuery:
+		for _, q := range m.Question {
+			switch q.Qtype {
+			case dns.TypeA:
+				name := strings.TrimRight(q.Name, ".")
+				ip, err := h.ResolveIP(name)
+
+				if err == nil && ip != "" {
+					rr, err := dns.NewRR(fmt.Sprintf("%s A %s", q.Name, ip))
+					if err == nil {
+						m.Answer = append(m.Answer, rr)
+					}
+				}
+			}
+		}
+	}
+	w.WriteMsg(&m)
+}
+
+func StartDNSServer(handler func(dns.ResponseWriter, *dns.Msg)) (*dns.Server, string) {
+	dns.HandleFunc(".", handler)
+	server := &dns.Server{Addr: ":0", Net: "udp"}
+	go server.ListenAndServe()
+	time.Sleep(time.Second)
+	addr := server.PacketConn.LocalAddr().String()
+	return server, addr
+}
+
 func NewDockerComposeHarness(name string, dockerComposeFiles ...string) (Harness, error) {
+	c := context.Background()
 	name = normalizeName(name)
 	proj, err := docker.NewProject(&ctx.Context{
 		Context: project.Context{
@@ -55,33 +95,58 @@ func NewDockerComposeHarness(name string, dockerComposeFiles ...string) (Harness
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create libcompose project")
 	}
+
 	return &dockerComposeHarness{
+		ctx:     c,
 		name:    name,
 		project: proj,
 	}, nil
 }
 
 func (h *dockerComposeHarness) Start() error {
-	if err := h.project.Up(context.Background(), options.Up{}); err != nil {
-		return errors.Wrap(err, "unable to bring up the libcompose project")
+	server, addr := StartDNSServer(h.handleDNS)
+	h.dns = server
+
+	h.oldResolver = net.DefaultResolver
+	net.DefaultResolver = &net.Resolver{
+		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
+			addr, _ := net.ResolveUDPAddr("udp4", addr)
+			return net.DialUDP(network, nil, addr)
+		},
 	}
+
+	if err := h.project.Up(h.ctx, options.Up{}); err != nil {
+    return errors.Wrap(err, "unable to bring up the libcompose project")
+	}
+
 	return nil
 }
 
 func (h *dockerComposeHarness) Stop() error {
-	if err := h.project.Down(context.Background(), options.Down{}); err != nil {
+	h.dns.Shutdown()
+	net.DefaultResolver = h.oldResolver
+	if err := h.project.Down(h.ctx, options.Down{}); err != nil {
 		return errors.Wrap(err, "unable to shut down the libcompose project")
+
 	}
 	return nil
 }
 
 func (h *dockerComposeHarness) Resolve(service string, port uint64) (string, error) {
+	ip, err := h.ResolveIP(service)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s:%d", ip, port), nil
+}
+
+func (h *dockerComposeHarness) ResolveIP(service string) (string, error) {
 	client, err := lclient.Create(lclient.Options{})
 	if err != nil {
 		return "", errors.Wrap(err, "unable to create Docker client")
 	}
 	filter := labels.And(labels.PROJECT.Eq(h.name), labels.SERVICE.Eq(service))
-	containers, err := container.ListByFilter(context.Background(), client, filter)
+	containers, err := container.ListByFilter(h.ctx, client, filter)
 	if err != nil {
 		return "", errors.Wrap(err, "unable to filter service containers")
 	}
@@ -89,7 +154,7 @@ func (h *dockerComposeHarness) Resolve(service string, port uint64) (string, err
 		return "", errors.WithStack(ErrNoContainerFound)
 	}
 	net := containers[0].NetworkSettings.Networks["bridge"]
-	return fmt.Sprintf("%s:%d", net.IPAddress, port), nil
+	return net.IPAddress, nil
 }
 
 func (h *dockerComposeHarness) Wait(healthcheck func() error, timeout time.Duration) error {

@@ -117,7 +117,7 @@ func (g *Generator) generate(api *design.APIDefinition) error {
 	}
 	file.WriteHeader("", g.target, imports)
 
-	if err = file.ExecuteTemplate(g.tmplName, g.fileTmpl, g.funcs, data); err != nil {
+	if err := file.ExecuteTemplate(g.tmplName, g.fileTmpl, g.funcs, data); err != nil {
 		return err
 	}
 	return file.FormatCode()

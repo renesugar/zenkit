@@ -13,5 +13,11 @@
 # Project-local glide cache, RE: https://github.com/Masterminds/glide/issues/736
 .glide/
 
+coverage/
 *.coverprofile
 *.coverage.xml
+junit.xml
+
+# Intellij junk
+*.iml
+.idea

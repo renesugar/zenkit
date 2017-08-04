@@ -3,9 +3,9 @@ package zenkit
 import (
 	"context"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/goadesign/goa"
 	goalogrus "github.com/goadesign/goa/logging/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 var noop = func() {}

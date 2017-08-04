@@ -6,8 +6,9 @@ import (
 	"fmt"
 
 	"github.com/goadesign/goa"
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	. "github.com/zenoss/zenkit"
+	"github.com/zenoss/zenkit/test"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -28,7 +29,7 @@ var _ = Describe("Logging", func() {
 		var svc *goa.Service
 
 		BeforeEach(func() {
-			svc = goa.New(RandStringRunes(8))
+			svc = goa.New(test.RandString(8))
 			svc.WithLogger(ServiceLogger())
 		})
 
@@ -57,13 +58,13 @@ var _ = Describe("Logging", func() {
 			SetLogLevel(svc, "error")
 
 			b.Reset()
-			msg := RandStringRunes(8)
+			msg := test.RandString(8)
 			svc.LogInfo(msg)
 			s = b.String()
 			Ω(s).ShouldNot(ContainSubstring(msg))
 
 			b.Reset()
-			msg = RandStringRunes(8)
+			msg = test.RandString(8)
 			svc.LogError(msg)
 			s = b.String()
 			Ω(s).Should(ContainSubstring(msg))
@@ -74,7 +75,7 @@ var _ = Describe("Logging", func() {
 			var b bytes.Buffer
 			logger.Out = &b
 
-			level := RandStringRunes(8)
+			level := test.RandString(8)
 			SetLogLevel(svc, level)
 			s := b.String()
 			Ω(s).Should(ContainSubstring("Unable to parse log level. Not changing."))

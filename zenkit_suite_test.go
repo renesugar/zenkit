@@ -5,6 +5,7 @@ import (
 
 	"github.com/goadesign/goa"
 	. "github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
 
 	"testing"
@@ -14,19 +15,8 @@ func TestZenkit(t *testing.T) {
 	RegisterFailHandler(Fail)
 
 	rand.Seed(GinkgoRandomSeed())
-
-	RunSpecs(t, "Zenkit Suite")
-
-}
-
-var letterRunes = []rune("abcdefghijklmnopqrstuvwxyz")
-
-func RandStringRunes(n int) string {
-	b := make([]rune, n)
-	for i := range b {
-		b[i] = letterRunes[rand.Intn(len(letterRunes))]
-	}
-	return string(b)
+	junitReporter := reporters.NewJUnitReporter("junit.xml")
+	RunSpecsWithDefaultAndCustomReporters(t, "Zenkit suite", []Reporter{junitReporter})
 }
 
 type NullLogAdapter struct{}
