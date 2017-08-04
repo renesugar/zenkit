@@ -6,7 +6,7 @@ from a Kafka topic.
 
 Typically, you would create a producer using `NewDatabusProducer`, passing in the addresses for Kafka and the schema registry, the Kafka topic to publish to, and the names of the key and value schemas.
 
-	producer, _ := NewDatabusProducer([]string{"kafka-host:9200"}, "schema-registry-host:8081"), "topic", "message-key-schema", "message-value-schema")
+	producer, _ := NewDatabusProducer([]string{"kafka-host:9200"}, "schema-registry-host:8081", "topic", "message-key-schema", "message-value-schema")
 	defer producer.Close()
 
 	key := SomeStruct{Field:"whatever"} // Should match message-key-schema
