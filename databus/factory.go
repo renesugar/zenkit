@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 
 	schemaregistry "github.com/datamountaineer/schema-registry"
-	"github.com/karrick/goavro"
 	"github.com/pkg/errors"
 )
 
+// MessageFactory wraps a topic, key subject and value subject. It handles
+// creating messages from Go structures according to the schemas provided, and
+// decoding messages according to the schema.
 type MessageFactory interface {
 	// Topic is the Kafka topic to which these messages are destined
 	Topic() string
@@ -16,15 +18,17 @@ type MessageFactory interface {
 	// ValueSubject is the registry subject for the schema of the value
 	ValueSubject() string
 	// KeyCodec is the Avro codec that will encode the message key
-	KeyCodec() *goavro.Codec
+	KeyCodec() SchemaCodec
 	// ValueCodec is the Avro codec that will encode the message value
-	ValueCodec() *goavro.Codec
+	ValueCodec() SchemaCodec
 	// Message produces an encoded message, ready to publish to Kafka
 	Message(key, value interface{}) (Message, error)
 	// Decode decodes a message received from Kafka into the types provided
 	Decode(msg Message, key, value interface{}) error
 }
 
+// NewMessageFactory creates a MessageFactory using the topic, key and value
+// schemas provided.
 func NewMessageFactory(topic, keySubject, valueSubject string, client schemaregistry.Client) (MessageFactory, error) {
 	_, keyCodec, err := GetCodec(client, keySubject)
 	if err != nil {
@@ -43,23 +47,25 @@ func NewMessageFactory(topic, keySubject, valueSubject string, client schemaregi
 	}, nil
 }
 
+// avroMessageFactory is the default implementation of MessageFactory. It uses
+// goavro.Codecs to do the encoding/decoding.
 type avroMessageFactory struct {
 	topic      string
 	keySubject string
 	valSubject string
-	keyCodec   *goavro.Codec
-	valCodec   *goavro.Codec
+	keyCodec   SchemaCodec
+	valCodec   SchemaCodec
 }
 
 func (f *avroMessageFactory) Topic() string {
 	return f.topic
 }
 
-func (f *avroMessageFactory) KeyCodec() *goavro.Codec {
+func (f *avroMessageFactory) KeyCodec() SchemaCodec {
 	return f.keyCodec
 
 }
-func (f *avroMessageFactory) ValueCodec() *goavro.Codec {
+func (f *avroMessageFactory) ValueCodec() SchemaCodec {
 	return f.valCodec
 }
 
@@ -93,7 +99,9 @@ func (f *avroMessageFactory) Decode(msg Message, key, value interface{}) error {
 	return nil
 }
 
-func encode(codec *goavro.Codec, data interface{}) ([]byte, error) {
+// encode massages the data specified into Go native types via JSON
+// marshal/unmarshal, then encodes it using the SchemaEncoder provided.
+func encode(codec SchemaEncoder, data interface{}) ([]byte, error) {
 	marshalled, err := json.Marshal(data)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to marshal data to json")
@@ -103,7 +111,9 @@ func encode(codec *goavro.Codec, data interface{}) ([]byte, error) {
 	return codec.TextualFromNative([]byte{}, v)
 }
 
-func decode(codec *goavro.Codec, data []byte, ptr interface{}) error {
+// decode decodes data using the SchemaDecoder provided, then applies it to the
+// pointer provided via JSON marshal/unmarshal.
+func decode(codec SchemaDecoder, data []byte, ptr interface{}) error {
 	native, _, err := codec.NativeFromTextual(data)
 	if err != nil {
 		return errors.Wrap(err, "failed to get native value from text")
