@@ -10,20 +10,31 @@ import (
 	"github.com/pkg/errors"
 )
 
-const STRUCT_KEY_TAG = "message-key"
-const STRUCT_VALUE_TAG = "message-value"
-const STRUCT_TAG_IDENTIFIER = "zenkit"
-
-var (
-	ErrInvalidMessageType = errors.New("invalid message type")
-	ErrConsumerClosed     = errors.New("consumer is closed")
+const (
+	StructTagKey        = "message-key"
+	StructTagValue      = "message-value"
+	StructTagIdentifier = "zenkit"
 )
 
+var (
+	// ErrInvalidMessageType is thrown when a key or value that can't be
+	// decoded according to the schema is provided
+	ErrInvalidMessageType = errors.New("invalid message type")
+	// ErrConsumerClosed is thrown when the databus consumer is no longer open
+	ErrConsumerClosed = errors.New("consumer is closed")
+)
+
+// DatabusConsumer is capable of receiving schema-encoded messages from a databus.
 type DatabusConsumer interface {
+	// Consume reads a message from the databus and applies it to the object at
+	// the pointer provided.
 	Consume(context.Context, interface{}) error
+	// Close closes the consumer.
 	Close() error
 }
 
+// NewDatabusConsumer returns the default implementation of a DatabusConsumer,
+// which reads Avro-encoded messages from a Kafka consumer.
 func NewDatabusConsumer(brokers []string, schemaRegistry, topic, keySubject, valueSubject, groupId string) (DatabusConsumer, error) {
 	// Get our schema registry
 	schemaRegistryClient, err := schemaregistry.NewClient(schemaRegistry)
@@ -50,6 +61,9 @@ func NewDatabusConsumer(brokers []string, schemaRegistry, topic, keySubject, val
 	return NewSaramaClusterDatabusConsumer(consumer, messageFactory)
 }
 
+// NewSaramaClusterDatabusConsumer returns a SaramaDatabusConsumer created from
+// an existing cluster.Consumer directly, instead of creating a new one from
+// broker addresses.
 func NewSaramaClusterDatabusConsumer(consumer SaramaClusterConsumer, messageFactory MessageFactory) (DatabusConsumer, error) {
 
 	c := &saramaClusterDatabusConsumer{
@@ -59,6 +73,8 @@ func NewSaramaClusterDatabusConsumer(consumer SaramaClusterConsumer, messageFact
 	return c, nil
 }
 
+// SaramaClusterConsumer is implemented by sarama's cluster.Consumer, and is
+// here for the sake of tests, since sarama doesn't provide an interface.
 type SaramaClusterConsumer interface {
 	Errors() <-chan error
 	Notifications() <-chan *cluster.Notification
@@ -67,6 +83,8 @@ type SaramaClusterConsumer interface {
 	Close() error
 }
 
+// saramaClusterDatabusConsumer is the default implementation of
+// DatabusConsumer, which receives Avro-encoded messages from a Kafka databus.
 type saramaClusterDatabusConsumer struct {
 	con            SaramaClusterConsumer
 	messageFactory MessageFactory
@@ -116,11 +134,10 @@ func (c *saramaClusterDatabusConsumer) Close() error {
 	return c.con.Close()
 }
 
+// validateType ensures that the message type is valid. It must be a pointer to
+// a struct with fields tagged as `zenkit:"message-key"` and
+// `zenkit:"message-value"`.
 func (c *saramaClusterDatabusConsumer) validateType(message interface{}) (int, int, error) {
-	// Make sure our message type is valid
-	//  Must be a pointer to struct with fields tagged as follows:
-	//   `zenkit:"message-key"`
-	//   `zenkit:"message-value"`
 	messageType := reflect.TypeOf(message)
 	if messageType.Kind() != reflect.Ptr {
 		return 0, 0, errors.Wrap(ErrInvalidMessageType, "type is not a pointer")
@@ -132,10 +149,10 @@ func (c *saramaClusterDatabusConsumer) validateType(message interface{}) (int, i
 	keyField := -1
 	valueField := -1
 	for i := 0; i < mType.NumField(); i++ {
-		tag := mType.Field(i).Tag.Get(STRUCT_TAG_IDENTIFIER)
-		if tag == STRUCT_KEY_TAG {
+		tag := mType.Field(i).Tag.Get(StructTagIdentifier)
+		if tag == StructTagKey {
 			keyField = i
-		} else if tag == STRUCT_VALUE_TAG {
+		} else if tag == StructTagValue {
 			valueField = i
 		}
 	}
@@ -174,10 +191,10 @@ func (c *saramaClusterDatabusConsumer) decodeMessage(rawMsg *sarama.ConsumerMess
 	reflect.ValueOf(v).Elem().Field(valueField).Set(reflect.ValueOf(value).Elem())
 
 	return nil
-
 }
 
-// Simple wrapper to make a sarama ConsumerMessage implement Message
+// SaramaMessage is a simple wrapper to make a sarama ConsumerMessage implement
+// Message
 type SaramaMessage struct {
 	Message *sarama.ConsumerMessage
 }
