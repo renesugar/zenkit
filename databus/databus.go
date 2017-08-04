@@ -29,6 +29,5 @@ Similarly, you would create a consumer using `NewDatabusConsumer`, passing in th
 	for consumer.Consume(&msg) == nil {
 		go Process(msg) // Get a copy here, since the pointer will be reused
 	}
-
 */
 package databus
