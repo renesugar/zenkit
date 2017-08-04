@@ -90,7 +90,7 @@ func (g *Generator) generate(api *design.APIDefinition) error {
 	// disk if there's nothing in it
 	var data interface{}
 	if g.dataFunc != nil {
-		data, err = g.dataFunc(api)
+		data, err := g.dataFunc(api)
 		if err != nil {
 			return err
 		}
