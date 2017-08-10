@@ -241,7 +241,7 @@ new suite of jobs for your service in the
 ## Microservice Release
 
 Once your microservice is ready for release, you will need to ensure that it is 
-configured to run in the staging environment.  This is managed in
+configured to deploy to the staging environment.  This is managed in
 [zing-deploy](https://github.com/zenoss/zing-deploy).
 
 1. Create a branch off of master of
@@ -250,10 +250,10 @@ configured to run in the staging environment.  This is managed in
 2. Update the docker-compose files with your service's configuration.
 
 3. Add your service to ci/release.groovy. In that file, you will see a list of
-   objects, each with the same two fields, `path` and `services`.  Path is the 
-   path to the service's folder in jenkins, usually 
-   "micro-services/{{SERVICE}}".  Services is the list of service names that 
-   will use the image.  Note that ci/release.groovy only pertains to services 
+   objects, each with the same two fields, `path` and `services`.  Path is the
+   path to the service's folder in jenkins, usually
+   "micro-services/{{SERVICE}}".  Services is the list of service names that
+   will use the image.  Note that ci/release.groovy only pertains to services
    that are released to staging/production.
 
 4. Open a pull request against the master branch.  Jenkins will automatically
@@ -261,12 +261,13 @@ configured to run in the staging environment.  This is managed in
    run acceptance tests.
 
 5. Once the pull request has been merged into master, your service will
-   automatically get added to the stack.  You will then need to enable
-   production releases for the service so that pull requests against that
-   service will automatically run tests in staging and merges into master will
-   automatically update the stack in staging.  To do this, you will delete the
-   disable-release config file from service's folder in Jenkins.  This is 
-   typically located at
+   automatically get added to the stack.
+
+6. Finally, you will need to enable production releases for the service so that
+   pull requests service will automatically run tests in staging and merges
+   into master will automatically update the stack in staging.  To do this,
+   delete the disable-release config file from service's folder in Jenkins.
+   This is typically located at
    `http://jenkins.zing.zenoss.eng/job/micro-services/job/{{SERVICE}}/configfiles`
 
 ## Issues?
