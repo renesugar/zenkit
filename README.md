@@ -238,6 +238,38 @@ enter the name of the service repo, and click "Build".  This will create a
 new suite of jobs for your service in the
 [Microservices folder](http://jenkins.zing.zenoss.eng/job/micro-services/).
 
+## Microservice Release
+
+Once your microservice is ready for release, you will need to ensure that it is 
+configured to deploy to the staging environment.  This is managed in
+[zing-deploy](https://github.com/zenoss/zing-deploy).
+
+1. Create a branch off of master of
+   [zing-deploy](https://github.com/zenoss/zing-deploy).
+
+2. Update the docker-compose files with your service's configuration.
+
+3. Add your service to ci/release.groovy. In that file, you will see a list of
+   objects, each with the same two fields, `path` and `services`.  Path is the
+   path to the service's folder in jenkins, usually
+   "micro-services/{{SERVICE}}".  Services is the list of service names that
+   will use the image.  Note that ci/release.groovy only pertains to services
+   that are released to staging/production.
+
+4. Open a pull request against the master branch.  Jenkins will automatically
+   deploy the last successful version of your service image into staging and
+   run acceptance tests.
+
+5. Once the pull request has been merged into master, your service will
+   automatically get added to the stack.
+
+6. Finally, you will need to enable production releases for the service so that
+   pull requests service will automatically run tests in staging and merges
+   into master will automatically update the stack in staging.  To do this,
+   delete the disable-release config file from service's folder in Jenkins.
+   This is typically located at
+   `http://jenkins.zing.zenoss.eng/job/micro-services/job/{{SERVICE}}/configfiles`
+
 ## Issues?
 [Zenoss Jira](https://jira.zenoss.com). Open an issue, ZING project, Zenkit
 component.
