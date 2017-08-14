@@ -239,7 +239,6 @@ new suite of jobs for your service in the
 [Microservices folder](http://jenkins.zing.zenoss.eng/job/micro-services/).
 
 ## Microservice Release
-
 Once your microservice is ready for release, you will need to ensure that it is 
 configured to deploy to the staging environment.  This is managed in
 [zing-deploy](https://github.com/zenoss/zing-deploy).
@@ -273,3 +272,12 @@ configured to deploy to the staging environment.  This is managed in
 ## Issues?
 [Zenoss Jira](https://jira.zenoss.com). Open an issue, ZING project, Zenkit
 component.
+
+## Troubleshooting
+
+* When I run `make`, I see a message similar to
+
+    [ERROR]    Error scanning github.com/dgrijalva/jwt-go: cannot find package "."
+        in:     /home/user/.glide/cache/src/https-github.com-dgrijalva-jwt-go
+
+Your package is missing from the glide.yaml.  Add the package and rerun `make`.
