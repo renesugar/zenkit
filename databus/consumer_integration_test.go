@@ -10,7 +10,6 @@ import (
 
 	"sync"
 
-	"github.com/datamountaineer/schema-registry"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
@@ -377,7 +376,7 @@ var _ = Describe("Consumer", func() {
 
 					close(done)
 				}()
-				Eventually(done).Should(BeClosed())
+				Eventually(done, 5*time.Second).Should(BeClosed())
 			})
 		})
 	})
