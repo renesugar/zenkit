@@ -274,10 +274,9 @@ configured to deploy to the staging environment.  This is managed in
 component.
 
 ## Troubleshooting
-
 * When I run `make`, I see a message similar to
 ```
     [ERROR]    Error scanning github.com/dgrijalva/jwt-go: cannot find package "."
         in:     /home/user/.glide/cache/src/https-github.com-dgrijalva-jwt-go
 ```
-Your package is missing from the glide.yaml.  Add the package and rerun `make`.
+  Your package is missing from the glide.yaml.  Add the package and rerun `make`.
