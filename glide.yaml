@@ -1,0 +1,55 @@
+package: github.com/zenoss/zenkit
+import:
+- package: github.com/Shopify/sarama
+  version: ~1.12.0
+- package: github.com/bsm/sarama-cluster
+  version: ~2.1.8
+- package: github.com/cenkalti/backoff
+  version: ~1.0.0
+- package: github.com/datamountaineer/schema-registry
+  version: ~0.1.0
+- package: github.com/dgrijalva/jwt-go
+  version: ~3.0.0
+- package: github.com/docker/libcompose
+  version: ~0.4.0
+  subpackages:
+  - config
+  - docker
+  - docker/client
+  - docker/container
+  - docker/ctx
+  - labels
+  - project
+  - project/options
+- package: github.com/goadesign/goa
+  version: ~1.2.0
+  subpackages:
+  - design
+  - design/apidsl
+  - goagen/codegen
+  - goagen/gen_app
+  - goagen/utils
+  - logging/logrus
+  - middleware
+  - middleware/security/jwt
+  - middleware/xray
+- package: github.com/karrick/goavro
+  version: ~0.3.1
+- package: github.com/miekg/dns
+- package: github.com/pkg/errors
+  version: ~0.8.0
+- package: github.com/rcrowley/go-metrics
+- package: github.com/sirupsen/logrus
+  version: ~1.0.2
+- package: github.com/spf13/afero
+- package: github.com/spf13/cobra
+- package: github.com/spf13/viper
+testImport:
+- package: github.com/onsi/ginkgo
+  version: ~1.4.0
+  subpackages:
+  - reporters
+- package: github.com/onsi/gomega
+  version: ~1.2.0
+  subpackages:
+  - gbytes

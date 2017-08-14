@@ -13,6 +13,10 @@
 # Project-local glide cache, RE: https://github.com/Masterminds/glide/issues/736
 .glide/
 
+# Don't check in vendored deps in libraries
+vendor/
+glide.lock
+
 coverage/
 *.coverprofile
 *.coverage.xml
