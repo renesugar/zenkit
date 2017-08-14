@@ -10,6 +10,7 @@ import (
 
 	"sync"
 
+	schemaregistry "github.com/datamountaineer/schema-registry"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
