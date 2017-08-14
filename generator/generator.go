@@ -88,9 +88,12 @@ func (g *Generator) generate(api *design.APIDefinition) error {
 
 	// Create the data for the template now, so we avoid writing the file to
 	// disk if there's nothing in it
-	var data interface{}
+	var (
+		data interface{}
+		err  error
+	)
 	if g.dataFunc != nil {
-		data, err := g.dataFunc(api)
+		data, err = g.dataFunc(api)
 		if err != nil {
 			return err
 		}
