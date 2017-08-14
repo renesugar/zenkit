@@ -239,7 +239,6 @@ new suite of jobs for your service in the
 [Microservices folder](http://jenkins.zing.zenoss.eng/job/micro-services/).
 
 ## Microservice Release
-
 Once your microservice is ready for release, you will need to ensure that it is 
 configured to deploy to the staging environment.  This is managed in
 [zing-deploy](https://github.com/zenoss/zing-deploy).
@@ -269,6 +268,18 @@ configured to deploy to the staging environment.  This is managed in
    delete the disable-release config file from service's folder in Jenkins.
    This is typically located at
    `http://jenkins.zing.zenoss.eng/job/micro-services/job/{{SERVICE}}/configfiles`
+
+## Troubleshooting
+* When I run `make`, I see a message similar to
+
+        [ERROR]    Error scanning github.com/dgrijalva/jwt-go: cannot find package "."
+            in:     /home/user/.glide/cache/src/https-github.com-dgrijalva-jwt-go
+
+  This only occurs when a package is used directly by the microservice and is 
+not specified in the `glide.yaml` file.  To fix this, add the dependency to the
+`glide.yaml` file and run `make`.  Note that this only affects packages that
+are used directly by the service.  Dependencies of dependencies do not need to
+be added to the `glide.yaml`.
 
 ## Issues?
 [Zenoss Jira](https://jira.zenoss.com). Open an issue, ZING project, Zenkit
