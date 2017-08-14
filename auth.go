@@ -34,8 +34,8 @@ func JWT() *design.SecuritySchemeDefinition {
 	return localJWT
 }
 
-func JWTMiddleware(service *goa.Service, filename string, validator goa.Middleware, security *goa.JWTSecurity) (goa.Middleware, error) {
-	key, err := readKeyFromFS(service, filename)
+func JWTMiddleware(logger ErrorLogger, filename string, validator goa.Middleware, security *goa.JWTSecurity) (goa.Middleware, error) {
+	key, err := ReadKeyFromFS(logger, filename)
 	if err != nil {
 		return nil, errors.Wrap(err, "couldn't read key from filesystem")
 	}
@@ -91,13 +91,13 @@ func ContextIdentity(ctx context.Context) Identity {
 	return nil
 }
 
-func readKeyFromFS(service *goa.Service, filename string) ([]byte, error) {
+func ReadKeyFromFS(logger ErrorLogger, filename string) ([]byte, error) {
 	// Get the secret key
 	var key []byte
 	readKey := func() error {
 		data, err := afero.ReadFile(FS, filename)
 		if err != nil {
-			service.LogError("Unable to load auth key. Retrying.", "keyfile", filename, "err", err)
+			logger.LogError("Unable to load auth key. Retrying.", "keyfile", filename, "err", err)
 			return errors.Wrap(err, "unable to load auth key")
 		}
 		key = data

@@ -10,6 +10,10 @@ import (
 
 var noop = func() {}
 
+type ErrorLogger interface {
+	LogError(msg string, keys ...interface{})
+}
+
 func ServiceLogger() goa.LogAdapter {
 	return goalogrus.New(logrus.New())
 }
