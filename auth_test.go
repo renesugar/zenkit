@@ -31,6 +31,14 @@ func (t *testIdentity) ID() string {
 	return t.id
 }
 
+type errorLogger struct {
+	Buf string
+}
+
+func (logger *errorLogger) LogError(msg string, keys ...interface{}) {
+	logger.Buf += fmt.Sprint(msg)
+}
+
 var _ = Describe("Auth utilities", func() {
 
 	var (
@@ -96,6 +104,27 @@ var _ = Describe("Auth utilities", func() {
 		Ω(errResp.Code).Should(Equal("jwt_security_error"))
 		Ω(errResp.Detail).Should(Equal(msg))
 	}
+
+	Context("when reading a key from the fs", func() {
+		Context("when the file does not exist", func() {
+			It("should log retries and return an error", func() {
+				KeyFileTimeout = 1 * time.Millisecond
+				logger := &errorLogger{}
+				_, err := ReadKeyFromFS(logger, "/does/not/exist")
+				Ω(err).Should(HaveOccurred())
+				Ω(logger.Buf).ShouldNot(BeNil())
+			})
+		})
+		Context("when the file does exist", func() {
+			It("should get the key written in the file", func() {
+				KeyFileTimeout = 1 * time.Millisecond
+				logger := &errorLogger{}
+				key, err := ReadKeyFromFS(logger, file.Name())
+				Ω(err).Should(BeNil())
+				Ω(key).Should(Equal(secret))
+			})
+		})
+	})
 
 	Context("using common JWT security", func() {
 		It(fmt.Sprintf("should register the authorization header \"%\"", AuthorizationHeader), func() {
