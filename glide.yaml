@@ -41,6 +41,9 @@ import:
 - package: github.com/rcrowley/go-metrics
 - package: github.com/sirupsen/logrus
   version: ~1.0.2
+- package: github.com/Sirupsen/logrus
+  repo: https://github.com/sirupsen/logrus.git
+  version: ~1.0.2
 - package: github.com/spf13/afero
 - package: github.com/spf13/cobra
 - package: github.com/spf13/viper
