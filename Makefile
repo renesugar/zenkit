@@ -1,6 +1,7 @@
 ZENKIT_VERSION       := 1.4
 ROOTDIR              ?= $(CURDIR)
 GINKGO               := $(shell command -v ginkgo 2> /dev/null)
+GLIDE               := $(shell command -v glide 2> /dev/null)
 PACKAGE              := github.com/zenoss/zenkit
 LOCAL_USER_ID        := $(shell id -u)
 BUILD_IMG            := zenoss/zenkit-build:$(ZENKIT_VERSION)
@@ -41,6 +42,10 @@ endif
 .PHONY: clean
 clean:
 	rm -rf $(COVERAGE_DIR) **/*.coverprofile **/junit.xml
+
+vendor:
+	@$(GLIDE) up
+	@for f in $$(grep -r -l Sirupsen vendor/*); do sed -i "s/Sirupsen/sirupsen/" $$f; done
 
 local-dev:
 	go get -u github.com/onsi/ginkgo/ginkgo
