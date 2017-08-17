@@ -1,17 +1,17 @@
 package: github.com/zenoss/zenkit
 import:
 - package: github.com/Shopify/sarama
-  version: ~1.12.0
+  version: 1.12.0
 - package: github.com/bsm/sarama-cluster
-  version: ~2.1.8
+  version: 2.1.8
 - package: github.com/cenkalti/backoff
-  version: ~1.0.0
+  version: 1.0.0
 - package: github.com/datamountaineer/schema-registry
-  version: ~0.1.0
+  version: 0.1.0
 - package: github.com/dgrijalva/jwt-go
-  version: ~3.0.0
+  version: 3.0.0
 - package: github.com/docker/libcompose
-  version: ~0.4.0
+  version: 1b708aac26a4fc6f9bff31728a8e3a252ef57dbd
   subpackages:
   - config
   - docker
@@ -22,7 +22,7 @@ import:
   - project
   - project/options
 - package: github.com/goadesign/goa
-  version: ~1.2.0
+  version: 94c5f00a452130a8732b2e3348eb9259be23a224
   subpackages:
   - design
   - design/apidsl
@@ -34,22 +34,32 @@ import:
   - middleware/security/jwt
   - middleware/xray
 - package: github.com/karrick/goavro
-  version: ~0.3.1
+  version: 0.3.1
 - package: github.com/miekg/dns
+  version: 0598bd43cf51d0375c5bcd3a42e807cc19b3b7d9
 - package: github.com/pkg/errors
-  version: ~0.8.0
+  version: 0.8.0
 - package: github.com/rcrowley/go-metrics
+  version: 1f30fe9094a513ce4c700b9a54458bbb0c96996c
 - package: github.com/sirupsen/logrus
-  version: ~1.0.2
+  version: 1.0.3
+- package: github.com/Sirupsen/logrus
+  repo: https://github.com/sirupsen/logrus.git
+  version: 1.0.3
 - package: github.com/spf13/afero
+  version: 9be650865eab0c12963d8753212f4f9c66cdcf12
 - package: github.com/spf13/cobra
+  version: cb731b898346822cc0c225c28550a8a29d93c732
 - package: github.com/spf13/viper
+  version: 25b30aa063fc18e48662b86996252eabdcf2f0c7
+- package: golang.org/x/crypto
+  version: b176d7def5d71bdd214203491f89843ed217f420
 testImport:
 - package: github.com/onsi/ginkgo
-  version: ~1.4.0
+  version: 1.4.0
   subpackages:
   - reporters
 - package: github.com/onsi/gomega
-  version: ~1.2.0
+  version: 1.2.0
   subpackages:
   - gbytes
