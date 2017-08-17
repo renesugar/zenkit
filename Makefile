@@ -43,10 +43,6 @@ endif
 clean:
 	rm -rf $(COVERAGE_DIR) **/*.coverprofile **/junit.xml
 
-vendor:
-	@$(GLIDE) up
-	@for f in $$(grep -r -l Sirupsen vendor/*); do sed -i "s/Sirupsen/sirupsen/" $$f; done
-
 local-dev:
 	go get -u github.com/onsi/ginkgo/ginkgo
 	go get -u github.com/onsi/gomega
