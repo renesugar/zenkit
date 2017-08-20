@@ -11,7 +11,7 @@ import:
 - package: github.com/dgrijalva/jwt-go
   version: 3.0.0
 - package: github.com/docker/libcompose
-  ref: master
+  version: 1b708aac26a4fc6f9bff31728a8e3a252ef57dbd
   subpackages:
   - config
   - docker
