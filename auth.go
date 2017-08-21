@@ -13,6 +13,7 @@ import (
 	"github.com/goadesign/goa/middleware/security/jwt"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
+	"github.com/zenoss/zenkit/claims"
 )
 
 type JWTValidator func(ctx context.Context) error
@@ -56,6 +57,34 @@ func JWTValidatorFunc(m JWTValidator) goa.Middleware {
 			return h(ctx, rw, req)
 		}
 	}
+}
+
+func AuthZeroJWTValidator(ctx context.Context) error {
+	token := jwt.ContextJWT(ctx).Claims.(*claims.AuthZeroClaims)
+	audience := ctx.Value(serviceKey).(claims.StringOrURI)
+	err := token.MoreValid(audience)
+	return err
+}
+
+func EdgeJWTValidator(ctx context.Context) error {
+	token := jwt.ContextJWT(ctx).Claims.(*claims.EdgeClaims)
+	audience := ctx.Value(serviceKey).(claims.StringOrURI)
+	err := token.MoreValid(audience)
+	return err
+}
+
+func AuthorizationJWTValidator(ctx context.Context) error {
+	token := jwt.ContextJWT(ctx).Claims.(*claims.AuthorizationClaims)
+	audience := ctx.Value(serviceKey).(claims.StringOrURI)
+	err := token.MoreValid(audience)
+	return err
+}
+
+func CompleteJWTValidator(ctx context.Context) error {
+	token := jwt.ContextJWT(ctx).Claims.(*claims.CompleteClaims)
+	audience := ctx.Value(serviceKey).(claims.StringOrURI)
+	err := token.MoreValid(audience)
+	return err
 }
 
 func DevModeMiddleware(h goa.Handler) goa.Handler {
