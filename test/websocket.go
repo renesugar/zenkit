@@ -13,7 +13,8 @@ import (
 // a test
 type WebSocketHandler func(*websocket.Conn)
 
-// RouteToWSHandler is called on a ghttp.Server to route to the websocket handler.
+// RouteToWSHandler is called on a ghttp.Server to set up a route to the
+// provided WebSocketHandler.
 func RouteToWSHandler(server *ghttp.Server, method, path string, handler WebSocketHandler) {
 	server.RouteToHandler(method, path, wshandler(handler))
 }
