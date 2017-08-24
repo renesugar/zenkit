@@ -11,8 +11,8 @@ import (
 
 var _ = Describe("Complete Claims", func() {
 	var (
-		now   = time.Now().Unix()
-		claim = CompleteClaims{
+		now           = time.Now().Unix()
+		defaultClaims = CompleteClaims{
 			EdgeClaims: EdgeClaims{
 				StandardClaims: StandardClaims{
 					Issuer:    EdgeIssuer,
@@ -26,32 +26,36 @@ var _ = Describe("Complete Claims", func() {
 			},
 			Token: "somesignedjwtstring",
 		}
+		claims        = defaultClaims
 		validAudience = StringOrURI("tester")
 	)
+	BeforeEach(func() {
+		claims = defaultClaims
+	})
 	Context("when validating fields with criteria", func() {
 		Context("when the issuer is not valid", func() {
 			BeforeEach(func() {
-				claim.Issuer = "keanu"
+				claims.Issuer = "keanu"
 			})
 			It("should return an error", func() {
-				err := claim.MoreValid(validAudience)
+				err := claims.Valid()
 				Ω(err).Should(Equal(ErrIssuer))
 			})
 		})
 		Context("when the audience is not valid", func() {
 			BeforeEach(func() {
-				claim.Audience = []StringOrURI{StringOrURI("keanu")}
+				claims.Audience = []StringOrURI{StringOrURI("keanu")}
 			})
 			It("should return an error", func() {
-				err := claim.MoreValid(validAudience)
+				err := claims.MoreValid(validAudience)
 				Ω(err).Should(Equal(ErrAudience))
 			})
 		})
 		Context("when the claims are just right", func() {
 			It("should validate with no errors", func() {
-				err := claim.Valid()
+				err := claims.Valid()
 				Ω(err).Should(BeNil())
-				err = claim.MoreValid(validAudience)
+				err = claims.MoreValid(validAudience)
 				Ω(err).Should(BeNil())
 			})
 		})

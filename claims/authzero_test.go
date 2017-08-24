@@ -11,8 +11,8 @@ import (
 
 var _ = Describe("AuthZero Claims", func() {
 	var (
-		now   = time.Now().Unix()
-		claim = AuthZeroClaims{
+		now           = time.Now().Unix()
+		defaultClaims = AuthZeroClaims{
 			StandardClaims: StandardClaims{
 				Issuer:    AuthZeroIssuer,
 				Subject:   StringOrURI("abcd"),
@@ -23,32 +23,45 @@ var _ = Describe("AuthZero Claims", func() {
 				ID:        "0",
 			},
 		}
+		claims        = defaultClaims
 		validAudience = StringOrURI("tester")
 	)
+	BeforeEach(func() {
+		claims = defaultClaims
+	})
+	Context("when standard claims do not validate", func() {
+		BeforeEach(func() {
+			claims.Subject = StringOrURI("")
+		})
+		It("should return an error", func() {
+			err := claims.Valid()
+			Ω(err).ShouldNot(BeNil())
+		})
+	})
 	Context("when validating fields with criteria", func() {
 		Context("when the issuer is not valid", func() {
 			BeforeEach(func() {
-				claim.Issuer = "keanu"
+				claims.Issuer = "keanu"
 			})
 			It("should return an error", func() {
-				err := claim.MoreValid(validAudience)
+				err := claims.Valid()
 				Ω(err).Should(Equal(ErrIssuer))
 			})
 		})
 		Context("when the audience is not valid", func() {
 			BeforeEach(func() {
-				claim.Audience = []StringOrURI{StringOrURI("keanu")}
+				claims.Audience = []StringOrURI{StringOrURI("keanu")}
 			})
 			It("should return an error", func() {
-				err := claim.MoreValid(validAudience)
+				err := claims.MoreValid(validAudience)
 				Ω(err).Should(Equal(ErrAudience))
 			})
 		})
 		Context("when the claims are just right", func() {
 			It("should validate with no errors", func() {
-				err := claim.Valid()
+				err := claims.Valid()
 				Ω(err).Should(BeNil())
-				err = claim.MoreValid(validAudience)
+				err = claims.MoreValid(validAudience)
 				Ω(err).Should(BeNil())
 			})
 		})
