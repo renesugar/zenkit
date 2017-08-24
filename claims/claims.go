@@ -51,6 +51,15 @@ func (claims *StandardClaims) Valid() error {
 	return nil
 }
 
+func (claims *StandardClaims) MoreValid(issuers []StringOrURI, audience StringOrURI) error {
+	if !verifyIssuer(claims.Issuer, issuers) {
+		return ErrIssuer
+	} else if !verifyAudience(claims.Audience, audience) {
+		return ErrAudience
+	}
+	return nil
+}
+
 func verifyIssuerExists(claimed StringOrURI) bool {
 	return claimed != ""
 }
@@ -82,7 +91,7 @@ func verifyAudience(claimed []StringOrURI, validAud StringOrURI) bool {
 }
 
 func verifyExpiresAt(claimed int64, now int64) bool {
-	if claimed > now {
+	if claimed != 0 && claimed > now {
 		return true
 	}
 	return false
