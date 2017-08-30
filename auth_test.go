@@ -17,6 +17,7 @@ import (
 	"github.com/goadesign/goa/middleware/security/jwt"
 	"github.com/pkg/errors"
 	. "github.com/zenoss/zenkit"
+	"github.com/zenoss/zenkit/claims"
 	"github.com/zenoss/zenkit/test"
 
 	. "github.com/onsi/ginkgo"
@@ -37,6 +38,23 @@ type errorLogger struct {
 
 func (logger *errorLogger) LogError(msg string, keys ...interface{}) {
 	logger.Buf += fmt.Sprint(msg)
+}
+
+func newClaims(id string) claims.StandardClaims {
+	now := time.Now()
+	return claims.StandardClaims{
+		Iss: "test",
+		Sub: id,
+		Aud: []string{"testers"},
+		Exp: now.Add(time.Hour).Unix(),
+		Nbf: now.Unix(),
+		Iat: now.Unix(),
+		Jti: "0",
+	}
+}
+
+func newClaimsMap(id string) claims.StandardClaimsMap {
+	return claims.StandardClaimsFromStruct(newClaims(id))
 }
 
 var _ = Describe("Auth utilities", func() {
@@ -88,10 +106,8 @@ var _ = Describe("Auth utilities", func() {
 	}
 
 	signedToken := func() string {
-		t := jwtpkg.New(jwtpkg.SigningMethodHS256)
-		t.Claims = jwtpkg.MapClaims(map[string]interface{}{
-			"sub": id,
-		})
+		stdClaims := newClaims(id)
+		t := jwtpkg.NewWithClaims(jwtpkg.SigningMethodHS256, stdClaims)
 		signed, _ := t.SignedString(secret)
 		return signed
 	}
@@ -228,6 +244,18 @@ var _ = Describe("Auth utilities", func() {
 				err := getHandler(JWTValidatorFunc(custom))(ctx, resp, req)
 				Ω(err).Should(HaveOccurred())
 				Ω(errors.Cause(err)).Should(Equal(TestError))
+			})
+		})
+
+		Context("using AuthZeroJWTValidator middleware", func() {
+			It("should reject requests that fail validation", func() {
+				id = test.RandString(8)
+				ctx := context.Background()
+				ctx = WithService(ctx, "badiss")
+				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", signedToken()))
+				err := getHandler(JWTValidatorFunc(AuthZeroJWTValidator))(ctx, resp, req)
+				Ω(err).Should(HaveOccurred())
+				Ω(errors.Cause(err)).Should(Equal(claims.ErrIssuer))
 			})
 		})
 

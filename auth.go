@@ -51,7 +51,8 @@ func JWTValidatorFunc(m JWTValidator) goa.Middleware {
 				return errors.WithStack(err)
 			}
 			token := jwt.ContextJWT(ctx)
-			ident := &tokenIdentity{claims: token.Claims.(jwtgo.MapClaims)}
+			stdClaims := claims.StandardClaimsMap(token.Claims.(jwtgo.MapClaims))
+			ident := &tokenIdentity{claims: stdClaims}
 			ctx = WithIdentity(ctx, ident)
 			ctx = goa.WithLogContext(ctx, "user_id", ident.ID())
 			return h(ctx, rw, req)
@@ -60,32 +61,32 @@ func JWTValidatorFunc(m JWTValidator) goa.Middleware {
 }
 
 func AuthZeroJWTValidator(ctx context.Context) error {
-	token := jwt.ContextJWT(ctx).Claims.(*claims.AuthZeroClaims)
-	audience := ctx.Value(serviceKey).(claims.StringOrURI)
-	err := token.MoreValid(audience)
+	audience := ctx.Value(serviceKey).(string)
+	token := claims.AuthZeroClaimsMap(jwt.ContextJWT(ctx).Claims.(jwtgo.MapClaims))
+	err := token.Validate(audience)
 	return err
 }
 
-func EdgeJWTValidator(ctx context.Context) error {
-	token := jwt.ContextJWT(ctx).Claims.(*claims.EdgeClaims)
-	audience := ctx.Value(serviceKey).(claims.StringOrURI)
-	err := token.MoreValid(audience)
-	return err
-}
-
-func AuthorizationJWTValidator(ctx context.Context) error {
-	token := jwt.ContextJWT(ctx).Claims.(*claims.AuthorizationClaims)
-	audience := ctx.Value(serviceKey).(claims.StringOrURI)
-	err := token.MoreValid(audience)
-	return err
-}
-
-func CompleteJWTValidator(ctx context.Context) error {
-	token := jwt.ContextJWT(ctx).Claims.(*claims.CompleteClaims)
-	audience := ctx.Value(serviceKey).(claims.StringOrURI)
-	err := token.MoreValid(audience)
-	return err
-}
+// func EdgeJWTValidator(ctx context.Context) error {
+// 	token := jwt.ContextJWT(ctx).Claims.(*claims.EdgeClaims)
+// 	audience := ctx.Value(serviceKey).(claims.StringOrURI)
+// 	err := token.MoreValid(audience)
+// 	return err
+// }
+//
+// func AuthorizationJWTValidator(ctx context.Context) error {
+// 	token := jwt.ContextJWT(ctx).Claims.(*claims.AuthorizationClaims)
+// 	audience := ctx.Value(serviceKey).(claims.StringOrURI)
+// 	err := token.MoreValid(audience)
+// 	return err
+// }
+//
+// func CompleteJWTValidator(ctx context.Context) error {
+// 	token := jwt.ContextJWT(ctx).Claims.(*claims.CompleteClaims)
+// 	audience := ctx.Value(serviceKey).(claims.StringOrURI)
+// 	err := token.MoreValid(audience)
+// 	return err
+// }
 
 func DevModeMiddleware(h goa.Handler) goa.Handler {
 	return func(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
@@ -102,11 +103,11 @@ type Identity interface {
 }
 
 type tokenIdentity struct {
-	claims jwtgo.MapClaims
+	claims claims.Claims
 }
 
 func (t *tokenIdentity) ID() string {
-	return t.claims["sub"].(string)
+	return t.claims.Subject()
 }
 
 func WithIdentity(ctx context.Context, identity Identity) context.Context {
@@ -118,6 +119,17 @@ func ContextIdentity(ctx context.Context) Identity {
 		return v.(Identity)
 	}
 	return nil
+}
+
+func WithService(ctx context.Context, service string) context.Context {
+	return context.WithValue(ctx, serviceKey, service)
+}
+
+func ContextService(ctx context.Context) string {
+	if v := ctx.Value(serviceKey); v != nil {
+		return v.(string)
+	}
+	return ""
 }
 
 func ReadKeyFromFS(logger ErrorLogger, filename string) ([]byte, error) {
@@ -148,5 +160,5 @@ const (
 
 const (
 	// This token is signed with the secret "secret" and gives the bearer the scopes "api:admin api:access"
-	devJWT = `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZXZlbG9wZXIiLCJuYW1lIjoiQS4gRGV2ZWxvcGVyLCBFc3EuIiwiYWRtaW4iOnRydWUsInNjb3BlcyI6ImFwaTphZG1pbiBhcGk6YWNjZXNzIn0.e2YYHulpdvpnBdvdpUJyyJnC2xsm4VMrs6riy9WX4Ug`
+	devJWT = `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZXZlbG9wZXIifQ.k15rx71mfm4ClG1J_zXxc6FtY5MkRLPTMvoquRGNg28`
 )

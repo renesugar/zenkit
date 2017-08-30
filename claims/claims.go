@@ -6,66 +6,85 @@ import (
 )
 
 var (
-	ErrIssuer    = errors.New("issuer is invalid")
-	ErrSubject   = errors.New("subject is invalid")
-	ErrAudience  = errors.New("audience is invalid")
+	// ErrIssuer occurs when the issuer claimed is not valid
+	ErrIssuer = errors.New("issuer is invalid")
+	// ErrSubject occurs when the subject claimed is not valid
+	ErrSubject = errors.New("subject is invalid")
+	// ErrAudience occurs when the audience claimed is not valid
+	ErrAudience = errors.New("audience is invalid")
+	// ErrExpiresAt occurs when the exp claimed is not valid
 	ErrExpiresAt = errors.New("token is expired")
+	// ErrNotBefore occurs when the nbf claimed is not valid
 	ErrNotBefore = errors.New("used before eligible")
-	ErrIssuedAt  = errors.New("used before issued")
-	ErrID        = errors.New("ID is invalid")
+	// ErrIssuedAt occurs when the iat claimed is not valid
+	ErrIssuedAt = errors.New("used before issued")
+	// ErrID occurs when the issuer jti is not valid
+	ErrID = errors.New("ID is invalid")
 )
 
-// StringOrURI is a case-sensitive string or uri which can be parsed into a url
-type StringOrURI string
-
-// StandardClaims implements registered claim names according to RFC 7519
-type StandardClaims struct {
-	Issuer    StringOrURI   `json:"iss"`
-	Subject   StringOrURI   `json:"sub"`
-	Audience  []StringOrURI `json:"aud"`
-	ExpiresAt int64         `json:"exp"`
-	NotBefore int64         `json:"nbf"`
-	IssuedAt  int64         `json:"iat"`
-	ID        string        `json:"jti"`
+// Claims exposes a collection of mandatory claims from a JWT
+type Claims interface {
+	// Issuer is the jwt "iss" claim
+	Issuer() string
+	// Subject is the jwt "sub" claim
+	Subject() string
+	// Audience is the jwt "aud" claim
+	Audience() []string
+	// ExpiresAt is the jwt "exp" claim
+	ExpiresAt() int64
+	// NotBefore is the jwt "nbf" claim
+	NotBefore() int64
+	// IssuedAt is the jwt "iat" claim
+	IssuedAt() int64
+	// ID is the jwt "jti" claim
+	ID() string
 }
 
-// Valid determines if a JWT should be rejected or not and implements jwt-go Claims interface
-func (claims *StandardClaims) Valid() error {
+// Valid determines if a JWT should be rejected or not based on
+// standard, mandatory jwt claims
+func Valid(claims Claims) error {
 	now := time.Now().Unix()
-
-	if !verifyIssuerExists(claims.Issuer) {
+	if !verifyIssuerExists(claims.Issuer()) {
 		return ErrIssuer
-	} else if !verifySubject(claims.Subject) {
+	} else if !verifySubject(claims.Subject()) {
 		return ErrSubject
-	} else if !verifyAudienceExists(claims.Audience) {
+	} else if !verifyAudienceExists(claims.Audience()) {
 		return ErrAudience
-	} else if !verifyExpiresAt(claims.ExpiresAt, now) {
+	} else if !verifyExpiresAt(claims.ExpiresAt(), now) {
 		return ErrExpiresAt
-	} else if !verifyNotBefore(claims.NotBefore, now) {
+	} else if !verifyNotBefore(claims.NotBefore(), now) {
 		return ErrNotBefore
-	} else if !verifyIssuedAt(claims.IssuedAt, now) {
+	} else if !verifyIssuedAt(claims.IssuedAt(), now) {
 		return ErrIssuedAt
-	} else if !verifyID(claims.ID) {
+	} else if !verifyID(claims.ID()) {
 		return ErrID
 	}
 	return nil
 }
 
-func (claims *StandardClaims) MoreValid(issuers []StringOrURI, audience StringOrURI) error {
-	if !verifyIssuer(claims.Issuer, issuers) {
+// ValidateIssuer verifies that the issuer in claims is in issuers, a slice of
+// valid issuers
+func ValidateIssuer(claims Claims, issuers []string) error {
+	if !verifyIssuer(claims.Issuer(), issuers) {
 		return ErrIssuer
-	} else if !verifyAudience(claims.Audience, audience) {
+	}
+	return nil
+}
+
+// ValidateAudience verifies that the audience in claims contains audience
+func ValidateAudience(claims Claims, audience string) error {
+	if !verifyAudience(claims.Audience(), audience) {
 		return ErrAudience
 	}
 	return nil
 }
 
-func verifyIssuerExists(claimed StringOrURI) bool {
+func verifyIssuerExists(claimed string) bool {
 	return claimed != ""
 }
 
-func verifyIssuer(claimed StringOrURI, validIssuers []StringOrURI) bool {
-	for _, iss := range validIssuers {
+func verifyIssuer(claimed string, issuers []string) bool {
+	for _, iss := range issuers {
 		if iss == claimed {
 			return true
 		}
@@ -73,17 +92,17 @@ func verifyIssuer(claimed StringOrURI, validIssuers []StringOrURI) bool {
 	return false
 }
 
-func verifySubject(claimed StringOrURI) bool {
+func verifySubject(claimed string) bool {
 	return claimed != ""
 }
 
-func verifyAudienceExists(claimed []StringOrURI) bool {
+func verifyAudienceExists(claimed []string) bool {
 	return claimed != nil && len(claimed) > 0
 }
 
-func verifyAudience(claimed []StringOrURI, validAud StringOrURI) bool {
+func verifyAudience(claimed []string, audience string) bool {
 	for _, aud := range claimed {
-		if aud == validAud {
+		if aud == audience {
 			return true
 		}
 	}

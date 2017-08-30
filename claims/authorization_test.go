@@ -15,9 +15,9 @@ var _ = Describe("Authoirzation Claims", func() {
 		defaultClaims = AuthorizationClaims{
 			StandardClaims: StandardClaims{
 				Issuer:    AuthorizationIssuer,
-				Subject:   StringOrURI("abcd"),
-				Audience:  []StringOrURI{StringOrURI("tester")},
-				ExpiresAt: now + time.Hour.Nanoseconds(),
+				Subject:   "abcd",
+				Audience:  []string{"tester"},
+				ExpiresAt: now + int64(time.Hour),
 				NotBefore: now,
 				IssuedAt:  now,
 				ID:        "0",
@@ -28,14 +28,14 @@ var _ = Describe("Authoirzation Claims", func() {
 			},
 		}
 		claims        = defaultClaims
-		validAudience = StringOrURI("tester")
+		validAudience = "tester"
 	)
 	BeforeEach(func() {
 		claims = defaultClaims
 	})
 	Context("when standard claims do not validate", func() {
 		BeforeEach(func() {
-			claims.Subject = StringOrURI("")
+			claims.Subject = ""
 		})
 		It("should return an error", func() {
 			err := claims.Valid()
@@ -54,7 +54,7 @@ var _ = Describe("Authoirzation Claims", func() {
 		})
 		Context("when the audience is not valid", func() {
 			BeforeEach(func() {
-				claims.Audience = []StringOrURI{StringOrURI("keanu")}
+				claims.Audience = []string{"keanu"}
 			})
 			It("should return an error", func() {
 				err := claims.MoreValid(validAudience)

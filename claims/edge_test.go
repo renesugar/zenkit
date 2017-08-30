@@ -15,23 +15,23 @@ var _ = Describe("Edge Claims", func() {
 		defaultClaims = EdgeClaims{
 			StandardClaims: StandardClaims{
 				Issuer:    EdgeIssuer,
-				Subject:   StringOrURI("abcd"),
-				Audience:  []StringOrURI{StringOrURI("tester")},
-				ExpiresAt: now + time.Hour.Nanoseconds(),
+				Subject:   "abcd",
+				Audience:  []string{"tester"},
+				ExpiresAt: now + int64(time.Hour),
 				NotBefore: now,
 				IssuedAt:  now,
 				ID:        "0",
 			},
 		}
 		claims        = defaultClaims
-		validAudience = StringOrURI("tester")
+		validAudience = "tester"
 	)
 	BeforeEach(func() {
 		claims = defaultClaims
 	})
 	Context("when standard claims do not validate", func() {
 		BeforeEach(func() {
-			claims.Subject = StringOrURI("")
+			claims.Subject = ""
 		})
 		It("should return an error", func() {
 			err := claims.Valid()
@@ -50,7 +50,7 @@ var _ = Describe("Edge Claims", func() {
 		})
 		Context("when the audience is not valid", func() {
 			BeforeEach(func() {
-				claims.Audience = []StringOrURI{StringOrURI("keanu")}
+				claims.Audience = []string{"keanu"}
 			})
 			It("should return an error", func() {
 				err := claims.MoreValid(validAudience)

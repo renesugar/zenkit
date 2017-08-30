@@ -13,24 +13,24 @@ var _ = Describe("Standard Claims", func() {
 	var (
 		now           = time.Now().Unix()
 		defaultClaims = StandardClaims{
-			Issuer:    StringOrURI("test"),
-			Subject:   StringOrURI("abcd"),
-			Audience:  []StringOrURI{StringOrURI("tester")},
-			ExpiresAt: now + time.Hour.Nanoseconds(),
+			Issuer:    "test",
+			Subject:   "abcd",
+			Audience:  []string{"tester"},
+			ExpiresAt: now + int64(time.Hour),
 			NotBefore: now,
 			IssuedAt:  now,
 			ID:        "0",
 		}
 		claims        = defaultClaims
-		validIssuers  = []StringOrURI{StringOrURI("test")}
-		validAudience = StringOrURI("tester")
+		validIssuers  = []string{"test"}
+		validAudience = "tester"
 	)
 	BeforeEach(func() {
 		claims = defaultClaims
 	})
 	Context("when standard claims do not validate", func() {
 		BeforeEach(func() {
-			claims.Subject = StringOrURI("")
+			claims.Subject = ""
 		})
 		It("should return an error", func() {
 			err := claims.Valid()
@@ -40,7 +40,7 @@ var _ = Describe("Standard Claims", func() {
 	Context("when verifying all fields have a value", func() {
 		Context("when issuer is empty", func() {
 			BeforeEach(func() {
-				claims.Issuer = StringOrURI("")
+				claims.Issuer = ""
 			})
 			It("should return an error", func() {
 				err := claims.Valid()
@@ -49,7 +49,7 @@ var _ = Describe("Standard Claims", func() {
 		})
 		Context("when subject is empty", func() {
 			BeforeEach(func() {
-				claims.Subject = StringOrURI("")
+				claims.Subject = ""
 			})
 			It("should return an error", func() {
 				err := claims.Valid()
@@ -58,7 +58,7 @@ var _ = Describe("Standard Claims", func() {
 		})
 		Context("when audience is empty", func() {
 			BeforeEach(func() {
-				claims.Audience = []StringOrURI{}
+				claims.Audience = []string{}
 			})
 			It("should return an error", func() {
 				err := claims.Valid()
@@ -111,7 +111,7 @@ var _ = Describe("Standard Claims", func() {
 		})
 		Context("when the audience is not valid", func() {
 			BeforeEach(func() {
-				claims.Audience = []StringOrURI{StringOrURI("keanu")}
+				claims.Audience = []string{"keanu"}
 			})
 			It("should return an error", func() {
 				err := claims.MoreValid(validIssuers, validAudience)
@@ -129,7 +129,7 @@ var _ = Describe("Standard Claims", func() {
 		})
 		Context("when not before is invalid", func() {
 			BeforeEach(func() {
-				claims.NotBefore = now + time.Hour.Nanoseconds()
+				claims.NotBefore = now + int64(time.Hour)
 			})
 			It("should return an error", func() {
 				err := claims.Valid()
@@ -138,7 +138,7 @@ var _ = Describe("Standard Claims", func() {
 		})
 		Context("when issued at is in the future", func() {
 			BeforeEach(func() {
-				claims.IssuedAt = now + time.Hour.Nanoseconds()
+				claims.IssuedAt = now + int64(time.Hour)
 			})
 			It("should return an error", func() {
 				err := claims.Valid()
