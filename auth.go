@@ -95,12 +95,12 @@ func ContextIdentity(ctx context.Context) Identity {
 
 // WithServiceName registers the service name to the context
 func WithServiceName(ctx context.Context, service string) context.Context {
-	return context.WithValue(ctx, serviceKey, service)
+	return context.WithValue(ctx, serviceNameKey, service)
 }
 
 // ContextServiceName gets the service name from the context
 func ContextServiceName(ctx context.Context) string {
-	if v := ctx.Value(serviceKey); v != nil {
+	if v := ctx.Value(serviceNameKey); v != nil {
 		return v.(string)
 	}
 	return ""

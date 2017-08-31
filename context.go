@@ -4,7 +4,7 @@ package zenkit
 type key int
 
 const (
-	serviceKey key = iota + 1
+	serviceNameKey key = iota + 1
 	metricsKey
 	identityKey
 )
