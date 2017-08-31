@@ -1,4 +1,4 @@
-ZENKIT_VERSION       := 1.6
+ZENKIT_VERSION       := 1.6.0
 ROOTDIR              ?= $(CURDIR)
 GINKGO               := $(shell command -v ginkgo 2> /dev/null)
 PACKAGE              := github.com/zenoss/zenkit
