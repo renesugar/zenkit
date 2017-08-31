@@ -167,6 +167,23 @@ var _ = Describe("Auth utilities", func() {
 		})
 	})
 
+	Context("when retrieving service from the context", func() {
+		Context("when the service name is on the context", func() {
+			It("should be retrieved", func() {
+				ctx := WithService(context.Background(), "servicename")
+				received := ContextService(ctx)
+				Ω(received).Should(Equal("servicename"))
+			})
+		})
+		Context("when the service name is not on the context", func() {
+			It("should be empty string", func() {
+				ctx := context.Background()
+				received := ContextService(ctx)
+				Ω(received).Should(Equal(""))
+			})
+		})
+	})
+
 	Context("using the dev mode middleware", func() {
 
 		It("should inject an authorization header when none exists", func() {
@@ -247,13 +264,49 @@ var _ = Describe("Auth utilities", func() {
 			})
 		})
 
-		Context("using AuthZeroJWTValidator middleware", func() {
+		Context("using AuthZeroValidation middleware", func() {
 			It("should reject requests that fail validation", func() {
 				id = test.RandString(8)
 				ctx := context.Background()
 				ctx = WithService(ctx, "badiss")
 				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", signedToken()))
-				err := getHandler(JWTValidatorFunc(AuthZeroJWTValidator))(ctx, resp, req)
+				err := getHandler(AuthZeroValidation)(ctx, resp, req)
+				Ω(err).Should(HaveOccurred())
+				Ω(errors.Cause(err)).Should(Equal(claims.ErrIssuer))
+			})
+		})
+
+		Context("using EdgeValidation middleware", func() {
+			It("should reject requests that fail validation", func() {
+				id = test.RandString(8)
+				ctx := context.Background()
+				ctx = WithService(ctx, "badiss")
+				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", signedToken()))
+				err := getHandler(EdgeValidation)(ctx, resp, req)
+				Ω(err).Should(HaveOccurred())
+				Ω(errors.Cause(err)).Should(Equal(claims.ErrIssuer))
+			})
+		})
+
+		Context("using Authorization middleware", func() {
+			It("should reject requests that fail validation", func() {
+				id = test.RandString(8)
+				ctx := context.Background()
+				ctx = WithService(ctx, "badiss")
+				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", signedToken()))
+				err := getHandler(AuthorizationValidation)(ctx, resp, req)
+				Ω(err).Should(HaveOccurred())
+				Ω(errors.Cause(err)).Should(Equal(claims.ErrIssuer))
+			})
+		})
+
+		Context("using CompleteValidator middleware", func() {
+			It("should reject requests that fail validation", func() {
+				id = test.RandString(8)
+				ctx := context.Background()
+				ctx = WithService(ctx, "badiss")
+				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", signedToken()))
+				err := getHandler(CompleteValidation)(ctx, resp, req)
 				Ω(err).Should(HaveOccurred())
 				Ω(errors.Cause(err)).Should(Equal(claims.ErrIssuer))
 			})
