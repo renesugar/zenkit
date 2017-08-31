@@ -6,6 +6,7 @@ import (
 	"net/url"
 
 	"github.com/gorilla/websocket"
+	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega/ghttp"
 )
 
@@ -29,6 +30,7 @@ func WebSocketURL(server *ghttp.Server) *url.URL {
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
+	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
 // wshandler is a trivial wrapper around a WebSocketHandler that turns it into
@@ -37,7 +39,7 @@ func wshandler(h WebSocketHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		conn, err := upgrader.Upgrade(w, req, nil)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Cannot upgrade: %v", err), http.StatusInternalServerError)
+			ginkgo.Fail(fmt.Sprintf("Cannot upgrade: %v", err))
 		}
 		h(conn)
 	}
