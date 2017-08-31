@@ -170,15 +170,15 @@ var _ = Describe("Auth utilities", func() {
 	Context("when retrieving service from the context", func() {
 		Context("when the service name is on the context", func() {
 			It("should be retrieved", func() {
-				ctx := WithService(context.Background(), "servicename")
-				received := ContextService(ctx)
+				ctx := WithServiceName(context.Background(), "servicename")
+				received := ContextServiceName(ctx)
 				Ω(received).Should(Equal("servicename"))
 			})
 		})
 		Context("when the service name is not on the context", func() {
 			It("should be empty string", func() {
 				ctx := context.Background()
-				received := ContextService(ctx)
+				received := ContextServiceName(ctx)
 				Ω(received).Should(Equal(""))
 			})
 		})
