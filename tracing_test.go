@@ -40,7 +40,7 @@ var _ = Describe("Tracing", func() {
 	addr, _ := net.ResolveUDPAddr("udp", "127.0.0.1:0")
 	listener, _ = net.ListenUDP("udp", addr)
 	address = listener.LocalAddr().String()
-	listener.SetReadDeadline(time.Now().Add(time.Second))
+	listener.SetReadDeadline(time.Now().Add(5 * time.Second))
 	buffer = BufferReader(listener)
 
 	BeforeEach(func() {
