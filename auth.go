@@ -22,16 +22,8 @@ var (
 	FS                   = afero.NewReadOnlyFs(afero.NewOsFs())
 	AuthorizationHeader  = "Authorization"
 	DefaultJWTValidation = JWTValidatorFunc(func(_ context.Context) error { return nil })
-	// AuthZeroValidation is middleware that should be used by services receiving a jwt from Auth0
-	AuthZeroValidation = JWTValidatorFunc(authZeroJWTValidator)
-	// EdgeValidation is middleware that should be used by services receiving a jwt from edge that does not contain roles
-	EdgeValidation = JWTValidatorFunc(edgeJWTValidator)
-	// AuthorizationValidation is middleware that should be used by services receiving a jwt from authorization
-	AuthorizationValidation = JWTValidatorFunc(authorizationJWTValidator)
-	// CompleteValidation is middleware that should be used by services receiving a jwt from edge that does contain roles
-	CompleteValidation = JWTValidatorFunc(completeJWTValidator)
-	KeyFileTimeout     = 30 * time.Second
-	localJWT           *design.SecuritySchemeDefinition
+	KeyFileTimeout       = 30 * time.Second
+	localJWT             *design.SecuritySchemeDefinition
 )
 
 func JWT() *design.SecuritySchemeDefinition {
@@ -60,40 +52,12 @@ func JWTValidatorFunc(m JWTValidator) goa.Middleware {
 			}
 			token := jwt.ContextJWT(ctx)
 			stdClaims := claims.StandardClaimsMap(token.Claims.(jwtgo.MapClaims))
-			ident := &tokenIdentity{claims: stdClaims}
+			ident := &tokenIdentity{stdClaims}
 			ctx = WithIdentity(ctx, ident)
 			ctx = goa.WithLogContext(ctx, "user_id", ident.ID())
 			return h(ctx, rw, req)
 		}
 	}
-}
-
-func authZeroJWTValidator(ctx context.Context) error {
-	audience := ctx.Value(serviceKey).(string)
-	m := claims.AuthZeroClaimsMap(jwt.ContextJWT(ctx).Claims.(jwtgo.MapClaims))
-	err := m.Validate(audience)
-	return err
-}
-
-func edgeJWTValidator(ctx context.Context) error {
-	audience := ctx.Value(serviceKey).(string)
-	m := claims.EdgeClaimsMap(jwt.ContextJWT(ctx).Claims.(jwtgo.MapClaims))
-	err := m.Validate(audience)
-	return err
-}
-
-func authorizationJWTValidator(ctx context.Context) error {
-	audience := ctx.Value(serviceKey).(string)
-	m := claims.AuthorizationClaimsMap(jwt.ContextJWT(ctx).Claims.(jwtgo.MapClaims))
-	err := m.Validate(audience)
-	return err
-}
-
-func completeJWTValidator(ctx context.Context) error {
-	audience := ctx.Value(serviceKey).(string)
-	m := claims.CompleteClaimsMap(jwt.ContextJWT(ctx).Claims.(jwtgo.MapClaims))
-	err := m.Validate(audience)
-	return err
 }
 
 func DevModeMiddleware(h goa.Handler) goa.Handler {
@@ -111,11 +75,11 @@ type Identity interface {
 }
 
 type tokenIdentity struct {
-	claims claims.Claims
+	claims.Claims
 }
 
 func (t *tokenIdentity) ID() string {
-	return t.claims.Subject()
+	return t.Claims.Subject()
 }
 
 func WithIdentity(ctx context.Context, identity Identity) context.Context {

@@ -1,7 +1,7 @@
 package claims
 
-// Helpers for retrieving standard claims from a map
-func getIssuer(m map[string]interface{}) string {
+// GetIssuer gets "iss" from the map as a string
+func GetIssuer(m map[string]interface{}) string {
 	iss, ok := m["iss"]
 	if !ok {
 		return ""
@@ -13,7 +13,8 @@ func getIssuer(m map[string]interface{}) string {
 	return issStr
 }
 
-func getSubject(m map[string]interface{}) string {
+// GetSubject gets "sub" from the map as a string
+func GetSubject(m map[string]interface{}) string {
 	sub, ok := m["sub"]
 	if !ok {
 		return ""
@@ -25,7 +26,8 @@ func getSubject(m map[string]interface{}) string {
 	return subStr
 }
 
-func getAudience(m map[string]interface{}) []string {
+// GetAudience gets "aud" from the map as a string slice
+func GetAudience(m map[string]interface{}) []string {
 	aud, ok := m["aud"]
 	if !ok {
 		return []string{}
@@ -47,7 +49,8 @@ func getAudience(m map[string]interface{}) []string {
 	return []string{}
 }
 
-func getExpiresAt(m map[string]interface{}) int64 {
+// GetExpiresAt gets "exp" from the map as an int64 that represents epoch time
+func GetExpiresAt(m map[string]interface{}) int64 {
 	exp, ok := m["exp"]
 	if !ok {
 		return int64(0)
@@ -61,7 +64,8 @@ func getExpiresAt(m map[string]interface{}) int64 {
 	return int64(0)
 }
 
-func getNotBefore(m map[string]interface{}) int64 {
+// GetNotBefore gets "nbf" from the map as an int64 that represents epoch time
+func GetNotBefore(m map[string]interface{}) int64 {
 	exp, ok := m["nbf"]
 	if !ok {
 		return int64(0)
@@ -75,7 +79,8 @@ func getNotBefore(m map[string]interface{}) int64 {
 	return int64(0)
 }
 
-func getIssuedAt(m map[string]interface{}) int64 {
+// GetIssuedAt gets "iat" from the map as an int64 that represents epoch time
+func GetIssuedAt(m map[string]interface{}) int64 {
 	exp, ok := m["iat"]
 	if !ok {
 		return int64(0)
@@ -89,7 +94,8 @@ func getIssuedAt(m map[string]interface{}) int64 {
 	return int64(0)
 }
 
-func getID(m map[string]interface{}) string {
+// GetID gets "jti" from the map as a string
+func GetID(m map[string]interface{}) string {
 	jti, ok := m["jti"]
 	if !ok {
 		return ""

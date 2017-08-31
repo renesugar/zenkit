@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-func TestZenkit(t *testing.T) {
+func TestClaims(t *testing.T) {
 	RegisterFailHandler(Fail)
 
 	rand.Seed(GinkgoRandomSeed())

@@ -46,37 +46,37 @@ func StandardClaimsFromStruct(claims StandardClaims) StandardClaimsMap {
 
 // Issuer is the jwt "iss" claim
 func (m StandardClaimsMap) Issuer() string {
-	return getIssuer(m)
+	return GetIssuer(m)
 }
 
 // Subject is the jwt "sub" claim
 func (m StandardClaimsMap) Subject() string {
-	return getSubject(m)
+	return GetSubject(m)
 }
 
 // Audience is the jwt "aud" claim
 func (m StandardClaimsMap) Audience() []string {
-	return getAudience(m)
+	return GetAudience(m)
 }
 
 // ExpiresAt is the jwt "exp" claim
 func (m StandardClaimsMap) ExpiresAt() int64 {
-	return getExpiresAt(m)
+	return GetExpiresAt(m)
 }
 
 // NotBefore is the jwt "nbf" claim
 func (m StandardClaimsMap) NotBefore() int64 {
-	return getNotBefore(m)
+	return GetNotBefore(m)
 }
 
 // IssuedAt is the jwt "iat" claim
 func (m StandardClaimsMap) IssuedAt() int64 {
-	return getIssuedAt(m)
+	return GetIssuedAt(m)
 }
 
 // ID is the jwt "jti" claim
 func (m StandardClaimsMap) ID() string {
-	return getID(m)
+	return GetID(m)
 }
 
 // Valid verifies that mandatory claims exist and are valid
