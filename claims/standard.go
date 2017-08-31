@@ -17,17 +17,18 @@ var (
 // NOTE: At the time of writing this, 8-29-17, goa jwt security cannot use
 // claim structs other than a jwt-go MapClaims
 
-// StandardClaimsMap is a map of claims with validation functions
+// StandardClaimsMap implements the Claims interface and
+// is a map of claims with validation functions
 type StandardClaimsMap map[string]interface{}
 
-// // NewStandardClaimsMap returns a map with keys for standard claims
-// func NewStandardClaimsMap() StandardClaimsMap {
-// 	m := make(map[string]interface{})
-// 	for k, v := range standardClaimsMap {
-// 		m[k] = v
-// 	}
-// 	return m
-// }
+// NewStandardClaimsMap returns a StandardClaimsMap with keys for standard claims
+func NewStandardClaimsMap() StandardClaimsMap {
+	m := make(map[string]interface{})
+	for k, v := range standardClaimsMap {
+		m[k] = v
+	}
+	return m
+}
 
 // StandardClaimsFromStruct assumes claims is valid and
 // creates a StandardClaimsMap from a StandardClaims
@@ -81,6 +82,17 @@ func (m StandardClaimsMap) ID() string {
 // Valid verifies that mandatory claims exist and are valid
 func (m StandardClaimsMap) Valid() error {
 	return Valid(m)
+}
+
+// Validate checks validity of all fields and verifies
+// the claims satisfy the issuers and audience
+func (m StandardClaimsMap) Validate(issuers []string, audience string) error {
+	if err := m.Valid(); err != nil {
+		return err
+	} else if err := ValidateIssuer(m, issuers); err != nil {
+		return err
+	}
+	return ValidateAudience(m, audience)
 }
 
 // StandardClaims implements registered claim names according to RFC 7519
@@ -148,9 +160,10 @@ func (claims StandardClaims) Valid() error {
 	return Valid(claims)
 }
 
-// Validate checks that the claim is valid and issuers and audience are satisfied
+// Validate checks validity of all fields and verifies
+// the claims satisfy the issuers and audience
 func (claims StandardClaims) Validate(issuers []string, audience string) error {
-	if err := Valid(claims); err != nil {
+	if err := claims.Valid(); err != nil {
 		return err
 	} else if err := ValidateIssuer(claims, issuers); err != nil {
 		return err

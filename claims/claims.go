@@ -20,6 +20,8 @@ var (
 	ErrIssuedAt = errors.New("used before issued")
 	// ErrID occurs when the issuer jti is not valid
 	ErrID = errors.New("ID is invalid")
+	// ValidDuration is the duration of time a JWT is valid
+	ValidDuration = time.Hour
 )
 
 // Claims exposes a collection of mandatory claims from a JWT

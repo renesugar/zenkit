@@ -30,19 +30,21 @@ func getAudience(m map[string]interface{}) []string {
 	if !ok {
 		return []string{}
 	}
-	audSlc, ok := aud.([]interface{})
-	if !ok {
-		return []string{}
-	}
-	audStrs := make([]string, len(audSlc))
-	for n, v := range audSlc {
-		val, ok := v.(string)
-		if !ok {
-			return []string{}
+	switch audSlc := aud.(type) {
+	case []interface{}:
+		audStrs := make([]string, len(audSlc))
+		for n, v := range audSlc {
+			val, ok := v.(string)
+			if !ok {
+				return []string{}
+			}
+			audStrs[n] = val
 		}
-		audStrs[n] = val
+		return audStrs
+	case []string:
+		return audSlc
 	}
-	return audStrs
+	return []string{}
 }
 
 func getExpiresAt(m map[string]interface{}) int64 {
@@ -50,35 +52,41 @@ func getExpiresAt(m map[string]interface{}) int64 {
 	if !ok {
 		return int64(0)
 	}
-	expFloat, ok := exp.(float64)
-	if !ok {
-		return int64(0)
+	switch v := exp.(type) {
+	case float64:
+		return int64(v)
+	case int64:
+		return v
 	}
-	return int64(expFloat)
+	return int64(0)
 }
 
 func getNotBefore(m map[string]interface{}) int64 {
-	nbf, ok := m["nbf"]
+	exp, ok := m["nbf"]
 	if !ok {
 		return int64(0)
 	}
-	nbfFloat, ok := nbf.(float64)
-	if !ok {
-		return int64(0)
+	switch v := exp.(type) {
+	case float64:
+		return int64(v)
+	case int64:
+		return v
 	}
-	return int64(nbfFloat)
+	return int64(0)
 }
 
 func getIssuedAt(m map[string]interface{}) int64 {
-	iat, ok := m["iat"]
+	exp, ok := m["iat"]
 	if !ok {
 		return int64(0)
 	}
-	iatFloat, ok := iat.(float64)
-	if !ok {
-		return int64(0)
+	switch v := exp.(type) {
+	case float64:
+		return int64(v)
+	case int64:
+		return v
 	}
-	return int64(iatFloat)
+	return int64(0)
 }
 
 func getID(m map[string]interface{}) string {

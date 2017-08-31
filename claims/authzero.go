@@ -1,8 +1,8 @@
 package claims
 
-// AuthZeroIssuer is the expected issuer of a token that parses to an AuthZeroClaims
 var (
-	AuthZeroIssuer = string("Auth0")
+	// AuthZeroIssuer is the expected issuer of a token containing an AuthZeroClaims
+	AuthZeroIssuer = "Auth0"
 
 	// authZeroClaimsMap defines the shape and fields for a map containing
 	// JWT claims from Auth0
@@ -17,8 +17,11 @@ var (
 	}
 )
 
+// AuthZeroClaimsMap implements the Claims interface and
+// is a map of claims with validation functions
 type AuthZeroClaimsMap map[string]interface{}
 
+// NewAuthZeroClaimsMap returns a AuthZeroClaimsMap with keys for Auth0 claims
 func NewAuthZeroClaimsMap() AuthZeroClaimsMap {
 	m := make(map[string]interface{})
 	for k, v := range authZeroClaimsMap {
@@ -27,9 +30,18 @@ func NewAuthZeroClaimsMap() AuthZeroClaimsMap {
 	return m
 }
 
-// Valid determines if a JWT should be rejected or not and implements jwt-go Claims interface
-func (claims AuthZeroClaimsMap) Valid() error {
-	return Valid(claims)
+// AuthZeroClaimsFromStruct assumes claims is valid and
+// creates a AuthZeroClaimsMap from a AuthZeroClaims
+func AuthZeroClaimsFromStruct(claims AuthZeroClaims) AuthZeroClaimsMap {
+	return AuthZeroClaimsMap{
+		"iss": claims.Iss,
+		"sub": claims.Sub,
+		"aud": claims.Aud,
+		"exp": claims.Exp,
+		"nbf": claims.Nbf,
+		"iat": claims.Iat,
+		"jti": claims.Jti,
+	}
 }
 
 // Issuer is the jwt "iss" claim
@@ -67,28 +79,21 @@ func (m AuthZeroClaimsMap) ID() string {
 	return getID(m)
 }
 
-// Validate checks that the claim is valid and issuers and audience are satisfied
-func (claims AuthZeroClaimsMap) Validate(audience string) error {
-	if err := Valid(claims); err != nil {
-		return err
-	} else if err := ValidateIssuer(claims, []string{AuthZeroIssuer}); err != nil {
+// Valid determines if a JWT should be rejected or not and implements jwt-go Claims interface
+func (m AuthZeroClaimsMap) Valid() error {
+	if err := Valid(m); err != nil {
 		return err
 	}
-	return ValidateAudience(claims, audience)
+	return ValidateIssuer(m, []string{AuthZeroIssuer})
 }
 
-func (m AuthZeroClaimsMap) ToAuthZeroClaims() (AuthZeroClaims, error) {
-	var claims AuthZeroClaims
-	err := m.Valid()
-	if err != nil {
-		return claims, err
+// Validate checks validity of all fields and verifies
+// the claims satisfy the audience
+func (m AuthZeroClaimsMap) Validate(audience string) error {
+	if err := m.Valid(); err != nil {
+		return err
 	}
-	claims = AuthZeroClaims{
-		StandardClaims: StandardClaims{
-			Iss: m["iss"].(string),
-		},
-	}
-	return claims, nil
+	return ValidateAudience(m, audience)
 }
 
 // AuthZeroClaims is the expected claims from a token received from Auth0
@@ -96,16 +101,34 @@ type AuthZeroClaims struct {
 	StandardClaims
 }
 
-// Valid determines if a JWT should be rejected or not and implements jwt-go Claims interface
-func (claims AuthZeroClaims) Valid() error {
-	return claims.StandardClaims.Valid()
+// AuthZeroClaimsFromMap assumes m is Valid and
+// creates a AuthZeroClaims from a AuthZeroClaimsMap
+func AuthZeroClaimsFromMap(m AuthZeroClaimsMap) AuthZeroClaims {
+	return AuthZeroClaims{
+		StandardClaims{
+			Iss: m.Issuer(),
+			Sub: m.Subject(),
+			Aud: m.Audience(),
+			Exp: m.ExpiresAt(),
+			Nbf: m.NotBefore(),
+			Iat: m.IssuedAt(),
+			Jti: m.ID(),
+		},
+	}
 }
 
-// Validate checks that the claim is valid and issuers and audience are satisfied
-func (claims AuthZeroClaims) Validate(audience string) error {
+// Valid determines if a JWT should be rejected or not and implements jwt-go Claims interface
+func (claims AuthZeroClaims) Valid() error {
 	if err := Valid(claims); err != nil {
 		return err
-	} else if err := ValidateIssuer(claims, []string{AuthZeroIssuer}); err != nil {
+	}
+	return ValidateIssuer(claims, []string{AuthZeroIssuer})
+}
+
+// Validate checks validity of all fields and verifies
+// the claims satisfy the issuers and audience
+func (claims AuthZeroClaims) Validate(audience string) error {
+	if err := claims.Valid(); err != nil {
 		return err
 	}
 	return ValidateAudience(claims, audience)
