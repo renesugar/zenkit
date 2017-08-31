@@ -17,6 +17,7 @@ import (
 	"github.com/goadesign/goa/middleware/security/jwt"
 	"github.com/pkg/errors"
 	. "github.com/zenoss/zenkit"
+	"github.com/zenoss/zenkit/claims"
 	"github.com/zenoss/zenkit/test"
 
 	. "github.com/onsi/ginkgo"
@@ -37,6 +38,23 @@ type errorLogger struct {
 
 func (logger *errorLogger) LogError(msg string, keys ...interface{}) {
 	logger.Buf += fmt.Sprint(msg)
+}
+
+func newClaims(id string) claims.StandardClaims {
+	now := time.Now()
+	return claims.StandardClaims{
+		Iss: "test",
+		Sub: id,
+		Aud: []string{"testers"},
+		Exp: now.Add(time.Hour).Unix(),
+		Nbf: now.Unix(),
+		Iat: now.Unix(),
+		Jti: "0",
+	}
+}
+
+func newClaimsMap(id string) claims.StandardClaimsMap {
+	return claims.StandardClaimsFromStruct(newClaims(id))
 }
 
 var _ = Describe("Auth utilities", func() {
@@ -88,10 +106,8 @@ var _ = Describe("Auth utilities", func() {
 	}
 
 	signedToken := func() string {
-		t := jwtpkg.New(jwtpkg.SigningMethodHS256)
-		t.Claims = jwtpkg.MapClaims(map[string]interface{}{
-			"sub": id,
-		})
+		stdClaims := newClaims(id)
+		t := jwtpkg.NewWithClaims(jwtpkg.SigningMethodHS256, stdClaims)
 		signed, _ := t.SignedString(secret)
 		return signed
 	}
@@ -148,6 +164,23 @@ var _ = Describe("Auth utilities", func() {
 			ctx := WithIdentity(context.Background(), ident)
 			received := ContextIdentity(ctx)
 			Ω(received).Should(Equal(ident))
+		})
+	})
+
+	Context("when retrieving service from the context", func() {
+		Context("when the service name is on the context", func() {
+			It("should be retrieved", func() {
+				ctx := WithServiceName(context.Background(), "servicename")
+				received := ContextServiceName(ctx)
+				Ω(received).Should(Equal("servicename"))
+			})
+		})
+		Context("when the service name is not on the context", func() {
+			It("should be empty string", func() {
+				ctx := context.Background()
+				received := ContextServiceName(ctx)
+				Ω(received).Should(Equal(""))
+			})
 		})
 	})
 
@@ -230,7 +263,6 @@ var _ = Describe("Auth utilities", func() {
 				Ω(errors.Cause(err)).Should(Equal(TestError))
 			})
 		})
-
 	})
 
 })

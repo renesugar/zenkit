@@ -13,6 +13,7 @@ import (
 	"github.com/goadesign/goa/middleware/security/jwt"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
+	"github.com/zenoss/zenkit/claims"
 )
 
 type JWTValidator func(ctx context.Context) error
@@ -50,7 +51,8 @@ func JWTValidatorFunc(m JWTValidator) goa.Middleware {
 				return errors.WithStack(err)
 			}
 			token := jwt.ContextJWT(ctx)
-			ident := &tokenIdentity{claims: token.Claims.(jwtgo.MapClaims)}
+			stdClaims := claims.StandardClaimsMap(token.Claims.(jwtgo.MapClaims))
+			ident := &tokenIdentity{stdClaims}
 			ctx = WithIdentity(ctx, ident)
 			ctx = goa.WithLogContext(ctx, "user_id", ident.ID())
 			return h(ctx, rw, req)
@@ -73,11 +75,11 @@ type Identity interface {
 }
 
 type tokenIdentity struct {
-	claims jwtgo.MapClaims
+	claims.Claims
 }
 
 func (t *tokenIdentity) ID() string {
-	return t.claims["sub"].(string)
+	return t.Claims.Subject()
 }
 
 func WithIdentity(ctx context.Context, identity Identity) context.Context {
@@ -89,6 +91,19 @@ func ContextIdentity(ctx context.Context) Identity {
 		return v.(Identity)
 	}
 	return nil
+}
+
+// WithServiceName registers the service name to the context
+func WithServiceName(ctx context.Context, service string) context.Context {
+	return context.WithValue(ctx, serviceNameKey, service)
+}
+
+// ContextServiceName gets the service name from the context
+func ContextServiceName(ctx context.Context) string {
+	if v := ctx.Value(serviceNameKey); v != nil {
+		return v.(string)
+	}
+	return ""
 }
 
 func ReadKeyFromFS(logger ErrorLogger, filename string) ([]byte, error) {
