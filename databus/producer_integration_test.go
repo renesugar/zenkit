@@ -28,8 +28,6 @@ var _ = Describe("Producer", func() {
 		brokers            []string
 		keySchema          = `"string"`
 		valueSchema        = `"int"`
-		keyID              int
-		valID              int
 		schemaRegistryAddr string
 		err                error
 	)
@@ -53,10 +51,10 @@ var _ = Describe("Producer", func() {
 		client, err := schemaregistry.NewClient(schemaRegistryAddr)
 		Ω(err).ShouldNot(HaveOccurred())
 
-		keyID, err = client.RegisterNewSchema(keySubject, fmt.Sprintf(`{"type": %s}`, keySchema))
+		_, err = client.RegisterNewSchema(keySubject, fmt.Sprintf(`{"type": %s}`, keySchema))
 		Ω(err).ShouldNot(HaveOccurred())
 
-		valID, err = client.RegisterNewSchema(valueSubject, fmt.Sprintf(`{"type": %s}`, valueSchema))
+		_, err = client.RegisterNewSchema(valueSubject, fmt.Sprintf(`{"type": %s}`, valueSchema))
 		Ω(err).ShouldNot(HaveOccurred())
 
 		err = nil
@@ -81,12 +79,10 @@ var _ = Describe("Producer", func() {
 		var saramaMessage *sarama.ConsumerMessage
 		Eventually(partConsumer.Messages()).Should(Receive(&saramaMessage))
 
-		keyjson, _ := json.Marshal(key)
-		keybin, _ := AvroSerialize(keyjson, keyID)
-		Ω(saramaMessage.Key).Should(Equal(keybin))
+		expected, _ := json.Marshal(key)
+		Ω(saramaMessage.Key).Should(Equal(expected))
 
-		valjson, _ := json.Marshal(value)
-		valbin, _ := AvroSerialize(valjson, valID)
+		expectedValue, _ := json.Marshal(value)
 		Ω(saramaMessage.Value).Should(Equal(expectedValue))
 	})
 
