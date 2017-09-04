@@ -101,18 +101,20 @@ func (c *saramaClusterDatabusConsumer) Consume(ctx context.Context, v interface{
 	stop := false
 	for !stop {
 		select {
+		case <-ctx.Done():
+			stop = true
 		case <-c.con.Errors():
 		// TODO
 		case <-c.con.Notifications():
 		// TODO
-		case <-ctx.Done():
-			stop = true
 		default:
 			stop = true
 		}
 	}
 
 	select {
+	case <-ctx.Done():
+		return errors.Wrap(ErrConsumerClosed, "context is cancelled")
 	case msg, more := <-c.con.Messages():
 		if more {
 			err := c.decodeMessage(msg, v, keyField, valueField)
@@ -125,8 +127,6 @@ func (c *saramaClusterDatabusConsumer) Consume(ctx context.Context, v interface{
 		} else {
 			return errors.Wrap(ErrConsumerClosed, "messages channel closed")
 		}
-	case <-ctx.Done():
-		return errors.Wrap(ErrConsumerClosed, "context is cancelled")
 	}
 }
 

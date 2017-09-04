@@ -86,10 +86,10 @@ var _ = Describe("Producer", func() {
 		Ω(m.Topic).Should(Equal(topic))
 
 		encodedKey, _ := m.Key.Encode()
-		Ω(encodedKey).Should(Equal([]byte(fmt.Sprintf(`"%s"`, key))))
+		Ω(stripAvroHeader(encodedKey)).Should(Equal([]byte(fmt.Sprintf(`"%s"`, key))))
 
 		encodedVal, _ := m.Value.Encode()
-		Ω(encodedVal).Should(Equal([]byte(strconv.Itoa(value))))
+		Ω(stripAvroHeader(encodedVal)).Should(Equal([]byte(strconv.Itoa(value))))
 	})
 
 	It("should error if the underlying Kafka producer fails to send the message", func() {

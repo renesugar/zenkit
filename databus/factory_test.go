@@ -42,6 +42,12 @@ var valTestSchema = `{
 	}]
 }`
 
+func stripAvroHeader(b []byte) []byte {
+	_, k, err := AvroDeserialize(b)
+	Ω(err).ShouldNot(HaveOccurred())
+	return k
+}
+
 var _ = Describe("Factory", func() {
 
 	var (
@@ -117,7 +123,7 @@ var _ = Describe("Factory", func() {
 			msg, err := factory.Message(key, value)
 			Ω(err).ShouldNot(HaveOccurred())
 			var result string
-			err = json.Unmarshal(msg.Key(), &result)
+			err = json.Unmarshal(stripAvroHeader(msg.Key()), &result)
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(result).Should(Equal(key))
 		})
@@ -126,7 +132,7 @@ var _ = Describe("Factory", func() {
 			msg, err := factory.Message(key, value)
 			Ω(err).ShouldNot(HaveOccurred())
 			var result int
-			err = json.Unmarshal(msg.Value(), &result)
+			err = json.Unmarshal(stripAvroHeader(msg.Value()), &result)
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(result).Should(Equal(value))
 		})
@@ -199,12 +205,12 @@ var _ = Describe("Factory", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 
 			By("failing to decode bad keys")
-			m := NewMessage(topic, badk, msg.Value())
+			m := NewMessage(topic, badk, stripAvroHeader(msg.Value()))
 			err = factory.Decode(m, &k, &v)
 			Ω(err).Should(HaveOccurred())
 
 			By("failing to decode bad values")
-			m = NewMessage(topic, msg.Key(), badv)
+			m = NewMessage(topic, stripAvroHeader(msg.Key()), badv)
 			err = factory.Decode(m, &k, &v)
 			Ω(err).Should(HaveOccurred())
 		})
