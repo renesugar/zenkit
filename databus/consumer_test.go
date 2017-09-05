@@ -132,10 +132,12 @@ var _ = Describe("Consumer", func() {
 			for i := 0; i < 5; i++ {
 				key := test.RandString(8)
 				value := rand.Intn(100)
+				keybin := AvroSerialize([]byte(fmt.Sprintf(`"%s"`, key)), 1)
+				valbin := AvroSerialize([]byte(strconv.Itoa(value)), 2)
 
 				saramaMessage := &sarama.ConsumerMessage{
-					Key:   []byte(fmt.Sprintf(`"%s"`, key)),
-					Value: []byte(strconv.Itoa(value)),
+					Key:   keybin,
+					Value: valbin,
 				}
 				messagesFromKafka = append(messagesFromKafka, saramaMessage)
 				expectation = append(expectation, TestMessageType{key, value})
@@ -148,6 +150,7 @@ var _ = Describe("Consumer", func() {
 			var message TestMessageType
 			done := make(chan interface{})
 			go func() {
+				defer GinkgoRecover()
 				for i := 0; i < 5; i++ {
 					err = databusConsumer.Consume(context.Background(), &message)
 					Ω(err).ShouldNot(HaveOccurred())
@@ -323,6 +326,7 @@ var _ = Describe("Consumer", func() {
 			myctx, cancel := context.WithCancel(context.Background())
 			cancel()
 			go func() {
+				defer GinkgoRecover()
 				defer close(done)
 				for err == nil {
 					err = databusConsumer.Consume(myctx, &message)
@@ -346,9 +350,12 @@ var _ = Describe("Consumer", func() {
 				valjson, err := json.Marshal(value)
 				Ω(err).ShouldNot(HaveOccurred())
 
+				keybin := AvroSerialize(keyjson, 3)
+				valbin := AvroSerialize(valjson, 4)
+
 				saramaMessage := &sarama.ConsumerMessage{
-					Key:   keyjson,
-					Value: valjson,
+					Key:   keybin,
+					Value: valbin,
 				}
 				messagesFromKafka = append(messagesFromKafka, saramaMessage)
 				expectation = append(expectation, TestMessageTypeStruct{key, value})
@@ -361,6 +368,7 @@ var _ = Describe("Consumer", func() {
 			message := TestMessageTypeStruct{}
 			done := make(chan interface{})
 			go func() {
+				defer GinkgoRecover()
 				for i := 0; i < 5; i++ {
 					err = databusConsumer.Consume(context.Background(), &message)
 					Ω(err).ShouldNot(HaveOccurred())
@@ -387,9 +395,12 @@ var _ = Describe("Consumer", func() {
 				valjson, err := json.Marshal(value)
 				Ω(err).ShouldNot(HaveOccurred())
 
+				keybin := AvroSerialize(keyjson, 3)
+				valbin := AvroSerialize(valjson, 4)
+
 				saramaMessage := &sarama.ConsumerMessage{
-					Key:   keyjson,
-					Value: valjson,
+					Key:   keybin,
+					Value: valbin,
 				}
 				messagesFromKafka = append(messagesFromKafka, saramaMessage)
 				expectation = append(expectation, TestMessageTypeStructPtr{key, value})
@@ -402,6 +413,7 @@ var _ = Describe("Consumer", func() {
 			message := TestMessageTypeStructPtr{}
 			done := make(chan interface{})
 			go func() {
+				defer GinkgoRecover()
 				for i := 0; i < 5; i++ {
 					err = databusConsumer.Consume(context.Background(), &message)
 					Ω(err).ShouldNot(HaveOccurred())

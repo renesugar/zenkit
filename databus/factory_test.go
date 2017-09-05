@@ -42,6 +42,12 @@ var valTestSchema = `{
 	}]
 }`
 
+func stripAvroHeader(b []byte) []byte {
+	_, k, err := AvroDeserialize(b)
+	Ω(err).ShouldNot(HaveOccurred())
+	return k
+}
+
 var _ = Describe("Factory", func() {
 
 	var (
@@ -117,7 +123,7 @@ var _ = Describe("Factory", func() {
 			msg, err := factory.Message(key, value)
 			Ω(err).ShouldNot(HaveOccurred())
 			var result string
-			err = json.Unmarshal(msg.Key(), &result)
+			err = json.Unmarshal(stripAvroHeader(msg.Key()), &result)
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(result).Should(Equal(key))
 		})
@@ -126,7 +132,7 @@ var _ = Describe("Factory", func() {
 			msg, err := factory.Message(key, value)
 			Ω(err).ShouldNot(HaveOccurred())
 			var result int
-			err = json.Unmarshal(msg.Value(), &result)
+			err = json.Unmarshal(stripAvroHeader(msg.Value()), &result)
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(result).Should(Equal(value))
 		})
@@ -199,13 +205,68 @@ var _ = Describe("Factory", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 
 			By("failing to decode bad keys")
-			m := NewMessage(topic, badk, msg.Value())
+			// Give it the correct Avro header with data that doesn't match
+			newkey := append([]byte{}, msg.Key()[:5]...)
+			m := NewMessage(topic, append(newkey, badk...), msg.Value())
 			err = factory.Decode(m, &k, &v)
 			Ω(err).Should(HaveOccurred())
 
 			By("failing to decode bad values")
-			m = NewMessage(topic, msg.Key(), badv)
+			// Give it the correct Avro header with data that doesn't match
+			newval := append([]byte{}, msg.Value()[:5]...)
+			m = NewMessage(topic, msg.Key(), append(newval, badv...))
 			err = factory.Decode(m, &k, &v)
+			Ω(err).Should(HaveOccurred())
+
+		})
+
+		It("should fail to decode messages with an alternate key schema", func() {
+			var (
+				otherk string
+				otherv ValTest
+			)
+			otherFactory, err := NewMessageFactory(topic, "object-key", valSubject, client)
+			Ω(err).ShouldNot(HaveOccurred())
+			otherMsg, err := otherFactory.Message("abc123", value)
+			Ω(err).ShouldNot(HaveOccurred())
+			err = factory.Decode(otherMsg, &otherk, &otherv)
+			Ω(err).Should(MatchError(ErrSchemaMismatch))
+		})
+
+		It("should fail to decode messages with an alternate value schema", func() {
+			var (
+				otherk KeyTest
+				otherv int
+			)
+			otherFactory, err := NewMessageFactory(topic, keySubject, "object-value", client)
+			Ω(err).ShouldNot(HaveOccurred())
+			otherMsg, err := otherFactory.Message(key, 123)
+			Ω(err).ShouldNot(HaveOccurred())
+			err = factory.Decode(otherMsg, &otherk, &otherv)
+			Ω(err).Should(MatchError(ErrSchemaMismatch))
+		})
+
+		It("should fail to decode messages without a valid Avro key header", func() {
+			var (
+				k KeyTest
+				v ValTest
+			)
+			msg, err := factory.Message(key, value)
+			Ω(err).ShouldNot(HaveOccurred())
+			tmsg := NewMessage(msg.Topic(), stripAvroHeader(msg.Key()), msg.Value())
+			err = factory.Decode(tmsg, &k, &v)
+			Ω(err).Should(HaveOccurred())
+		})
+
+		It("should fail to decode messages without a valid Avro value header", func() {
+			var (
+				k KeyTest
+				v ValTest
+			)
+			msg, err := factory.Message(key, value)
+			Ω(err).ShouldNot(HaveOccurred())
+			tmsg := NewMessage(msg.Topic(), msg.Key(), stripAvroHeader(msg.Value()))
+			err = factory.Decode(tmsg, &k, &v)
 			Ω(err).Should(HaveOccurred())
 		})
 

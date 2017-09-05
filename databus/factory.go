@@ -7,6 +7,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+var (
+	ErrSchemaMismatch = errors.New("message schema doesn't match deserializer")
+)
+
 // MessageFactory wraps a topic, key subject and value subject. It handles
 // creating messages from Go structures according to the schemas provided, and
 // decoding messages according to the schema.
@@ -30,31 +34,35 @@ type MessageFactory interface {
 // NewMessageFactory creates a MessageFactory using the topic, key and value
 // schemas provided.
 func NewMessageFactory(topic, keySubject, valueSubject string, client schemaregistry.Client) (MessageFactory, error) {
-	_, keyCodec, err := GetCodec(client, keySubject)
+	keyID, keyCodec, err := GetCodec(client, keySubject)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get codec for key subject: %s", keySubject)
 	}
-	_, valCodec, err := GetCodec(client, valueSubject)
+	valID, valCodec, err := GetCodec(client, valueSubject)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get codec for value subject: %s", valueSubject)
 	}
 	return &avroMessageFactory{
-		topic:      topic,
-		keySubject: keySubject,
-		valSubject: valueSubject,
-		keyCodec:   keyCodec,
-		valCodec:   valCodec,
+		topic:       topic,
+		keySubject:  keySubject,
+		valSubject:  valueSubject,
+		keySchemaID: keyID,
+		valSchemaID: valID,
+		keyCodec:    keyCodec,
+		valCodec:    valCodec,
 	}, nil
 }
 
 // avroMessageFactory is the default implementation of MessageFactory. It uses
 // goavro.Codecs to do the encoding/decoding.
 type avroMessageFactory struct {
-	topic      string
-	keySubject string
-	valSubject string
-	keyCodec   SchemaCodec
-	valCodec   SchemaCodec
+	topic       string
+	keySubject  string
+	valSubject  string
+	keySchemaID int
+	valSchemaID int
+	keyCodec    SchemaCodec
+	valCodec    SchemaCodec
 }
 
 func (f *avroMessageFactory) Topic() string {
@@ -82,18 +90,34 @@ func (f *avroMessageFactory) Message(key, value interface{}) (Message, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to encode key")
 	}
+	avroEncodedKey := AvroSerialize(encodedKey, f.keySchemaID)
 	encodedValue, err := encode(f.valCodec, value)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to encode value")
 	}
-	return NewMessage(f.topic, encodedKey, encodedValue), nil
+	avroEncodedValue := AvroSerialize(encodedValue, f.valSchemaID)
+	return &defaultMessage{f.topic, avroEncodedKey, avroEncodedValue}, nil
 }
 
 func (f *avroMessageFactory) Decode(msg Message, key, value interface{}) error {
-	if err := decode(f.keyCodec, msg.Key(), key); err != nil {
+	keyID, keyBytes, err := AvroDeserialize(msg.Key())
+	if err != nil {
+		return errors.Wrap(err, "failed to deserialize key as an Avro message")
+	}
+	if keyID != f.keySchemaID {
+		return ErrSchemaMismatch
+	}
+	if err := decode(f.keyCodec, keyBytes, key); err != nil {
 		return errors.Wrap(err, "failed to decode key")
 	}
-	if err := decode(f.valCodec, msg.Value(), value); err != nil {
+	valID, valBytes, err := AvroDeserialize(msg.Value())
+	if err != nil {
+		return errors.Wrap(err, "failed to deserialize value as an Avro message")
+	}
+	if valID != f.valSchemaID {
+		return ErrSchemaMismatch
+	}
+	if err := decode(f.valCodec, valBytes, value); err != nil {
 		return errors.Wrap(err, "failed to decode value")
 	}
 	return nil
