@@ -90,18 +90,12 @@ func (f *avroMessageFactory) Message(key, value interface{}) (Message, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to encode key")
 	}
-	avroEncodedKey, err := AvroSerialize(encodedKey, f.keySchemaID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to serialize key to Avro message")
-	}
+	avroEncodedKey := AvroSerialize(encodedKey, f.keySchemaID)
 	encodedValue, err := encode(f.valCodec, value)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to encode value")
 	}
-	avroEncodedValue, err := AvroSerialize(encodedValue, f.valSchemaID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to serialize value to Avro message")
-	}
+	avroEncodedValue := AvroSerialize(encodedValue, f.valSchemaID)
 	return &defaultMessage{f.topic, avroEncodedKey, avroEncodedValue}, nil
 }
 

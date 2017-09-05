@@ -82,11 +82,11 @@ var _ = Describe("Producer", func() {
 		Eventually(partConsumer.Messages()).Should(Receive(&saramaMessage))
 
 		keyjson, _ := json.Marshal(key)
-		keybin, _ := AvroSerialize(keyjson, keyID)
+		keybin := AvroSerialize(keyjson, keyID)
 		Ω(saramaMessage.Key).Should(Equal(keybin))
 
 		valjson, _ := json.Marshal(value)
-		valbin, _ := AvroSerialize(valjson, valID)
+		valbin := AvroSerialize(valjson, valID)
 		Ω(saramaMessage.Value).Should(Equal(valbin))
 	})
 

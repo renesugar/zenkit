@@ -16,24 +16,15 @@ var (
 
 // AvroSerialize prefaces a message with a proper Avro header including the
 // schema registry ID
-func AvroSerialize(msg []byte, schemaID int) ([]byte, error) {
+func AvroSerialize(msg []byte, schemaID int) []byte {
 	var b bytes.Buffer
 	buf := &b
-	_, err := buf.Write(magicByte)
-	if err != nil {
-		return nil, err
-	}
+	buf.Write(magicByte)
 	idSlice := make([]byte, 4)
 	binary.BigEndian.PutUint32(idSlice, uint32(schemaID))
-	_, err = buf.Write(idSlice)
-	if err != nil {
-		return nil, err
-	}
-	_, err = buf.Write(msg)
-	if err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
+	buf.Write(idSlice)
+	buf.Write(msg)
+	return buf.Bytes()
 }
 
 // AvroDeserialize deserializes an Avro message header and returns the schema

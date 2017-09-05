@@ -132,10 +132,8 @@ var _ = Describe("Consumer", func() {
 			for i := 0; i < 5; i++ {
 				key := test.RandString(8)
 				value := rand.Intn(100)
-				keybin, err := AvroSerialize([]byte(fmt.Sprintf(`"%s"`, key)), 1)
-				Ω(err).ShouldNot(HaveOccurred())
-				valbin, err := AvroSerialize([]byte(strconv.Itoa(value)), 2)
-				Ω(err).ShouldNot(HaveOccurred())
+				keybin := AvroSerialize([]byte(fmt.Sprintf(`"%s"`, key)), 1)
+				valbin := AvroSerialize([]byte(strconv.Itoa(value)), 2)
 
 				saramaMessage := &sarama.ConsumerMessage{
 					Key:   keybin,
@@ -352,10 +350,8 @@ var _ = Describe("Consumer", func() {
 				valjson, err := json.Marshal(value)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				keybin, err := AvroSerialize(keyjson, 3)
-				Ω(err).ShouldNot(HaveOccurred())
-				valbin, _ := AvroSerialize(valjson, 4)
-				Ω(err).ShouldNot(HaveOccurred())
+				keybin := AvroSerialize(keyjson, 3)
+				valbin := AvroSerialize(valjson, 4)
 
 				saramaMessage := &sarama.ConsumerMessage{
 					Key:   keybin,
@@ -399,10 +395,8 @@ var _ = Describe("Consumer", func() {
 				valjson, err := json.Marshal(value)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				keybin, err := AvroSerialize(keyjson, 3)
-				Ω(err).ShouldNot(HaveOccurred())
-				valbin, err := AvroSerialize(valjson, 4)
-				Ω(err).ShouldNot(HaveOccurred())
+				keybin := AvroSerialize(keyjson, 3)
+				valbin := AvroSerialize(valjson, 4)
 
 				saramaMessage := &sarama.ConsumerMessage{
 					Key:   keybin,
