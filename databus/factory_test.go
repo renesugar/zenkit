@@ -215,6 +215,32 @@ var _ = Describe("Factory", func() {
 			Ω(err).Should(HaveOccurred())
 		})
 
+		It("should fail to decode messages with an alternate key schema", func() {
+			var (
+				otherk string
+				otherv ValTest
+			)
+			otherFactory, err := NewMessageFactory(topic, "object-key", valSubject, client)
+			Ω(err).ShouldNot(HaveOccurred())
+			otherMsg, err := otherFactory.Message("abc123", value)
+			Ω(err).ShouldNot(HaveOccurred())
+			err = factory.Decode(otherMsg, &otherk, &otherv)
+			Ω(err).Should(MatchError(ErrSchemaMismatch))
+		})
+
+		It("should fail to decode messages with an alternate value schema", func() {
+			var (
+				otherk KeyTest
+				otherv int
+			)
+			otherFactory, err := NewMessageFactory(topic, keySubject, "object-value", client)
+			Ω(err).ShouldNot(HaveOccurred())
+			otherMsg, err := otherFactory.Message(key, 123)
+			Ω(err).ShouldNot(HaveOccurred())
+			err = factory.Decode(otherMsg, &otherk, &otherv)
+			Ω(err).Should(MatchError(ErrSchemaMismatch))
+		})
+
 	})
 
 })
