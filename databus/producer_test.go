@@ -4,12 +4,11 @@ import (
 	"errors"
 
 	"github.com/Shopify/sarama"
+	"github.com/linkedin/goavro"
 	. "github.com/zenoss/zenkit/databus"
 	"github.com/zenoss/zenkit/test"
 
-	"fmt"
 	"math/rand"
-	"strconv"
 
 	"github.com/datamountaineer/schema-registry"
 	. "github.com/onsi/ginkgo"
@@ -53,6 +52,7 @@ var _ = Describe("Producer", func() {
 		value                int
 		schemas              map[string]string
 		ids                  map[string]int
+		keyCodec, valCodec   *goavro.Codec
 		schemaRegistryClient schemaregistry.Client
 	)
 
@@ -68,7 +68,11 @@ var _ = Describe("Producer", func() {
 
 		ids = map[string]int{
 			"object-key":   1,
-			"object-value": 2}
+			"object-value": 2,
+		}
+
+		keyCodec, _ = goavro.NewCodec(schemas["object-key"])
+		valCodec, _ = goavro.NewCodec(schemas["object-value"])
 
 		producer = &mockSyncProducer{messages: make([]*sarama.ProducerMessage, 0)}
 		schemaRegistryClient = GetSchemaRegistryMockClient(schemas, ids)
@@ -86,10 +90,13 @@ var _ = Describe("Producer", func() {
 		Ω(m.Topic).Should(Equal(topic))
 
 		encodedKey, _ := m.Key.Encode()
-		Ω(stripAvroHeader(encodedKey)).Should(Equal([]byte(fmt.Sprintf(`"%s"`, key))))
+		result, _, err := keyCodec.NativeFromBinary(stripAvroHeader(encodedKey))
+		Ω(err).ShouldNot(HaveOccurred())
+		Ω(result).Should(Equal(key))
 
 		encodedVal, _ := m.Value.Encode()
-		Ω(stripAvroHeader(encodedVal)).Should(Equal([]byte(strconv.Itoa(value))))
+		result, _, err = valCodec.NativeFromBinary(stripAvroHeader(encodedVal))
+		Ω(result).Should(BeNumerically("==", value))
 	})
 
 	It("should error if the underlying Kafka producer fails to send the message", func() {

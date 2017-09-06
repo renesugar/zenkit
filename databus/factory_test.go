@@ -1,10 +1,10 @@
 package databus_test
 
 import (
-	"encoding/json"
 	"math/rand"
 
 	schemaregistry "github.com/datamountaineer/schema-registry"
+	"github.com/linkedin/goavro"
 	. "github.com/zenoss/zenkit/databus"
 	"github.com/zenoss/zenkit/test"
 
@@ -54,6 +54,8 @@ var _ = Describe("Factory", func() {
 		factory    MessageFactory
 		topic      string
 		client     schemaregistry.Client
+		keyCodec   *goavro.Codec
+		valCodec   *goavro.Codec
 		keySubject = "object-key"
 		valSubject = "object-value"
 		schemas    = map[string]string{
@@ -76,6 +78,8 @@ var _ = Describe("Factory", func() {
 		client = GetSchemaRegistryMockClient(schemas, ids)
 		topic = test.RandString(8)
 		factory, err = NewMessageFactory(topic, keySubject, valSubject, client)
+		keyCodec, _ = goavro.NewCodec(schemas[keySubject])
+		valCodec, _ = goavro.NewCodec(schemas[valSubject])
 		Ω(err).ShouldNot(HaveOccurred())
 	})
 
@@ -122,8 +126,7 @@ var _ = Describe("Factory", func() {
 		It("should return a message with the key encoded using the right schema", func() {
 			msg, err := factory.Message(key, value)
 			Ω(err).ShouldNot(HaveOccurred())
-			var result string
-			err = json.Unmarshal(stripAvroHeader(msg.Key()), &result)
+			result, _, err := keyCodec.NativeFromBinary(stripAvroHeader(msg.Key()))
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(result).Should(Equal(key))
 		})
@@ -131,10 +134,9 @@ var _ = Describe("Factory", func() {
 		It("should return a message with the value encoded using the right schema", func() {
 			msg, err := factory.Message(key, value)
 			Ω(err).ShouldNot(HaveOccurred())
-			var result int
-			err = json.Unmarshal(stripAvroHeader(msg.Value()), &result)
+			result, _, err := valCodec.NativeFromBinary(stripAvroHeader(msg.Value()))
 			Ω(err).ShouldNot(HaveOccurred())
-			Ω(result).Should(Equal(value))
+			Ω(result).Should(BeNumerically("==", value))
 		})
 
 		It("should fail to encode a message if the key doesn't match the schema", func() {

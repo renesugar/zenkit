@@ -33,8 +33,8 @@ import:
   - middleware
   - middleware/security/jwt
   - middleware/xray
-- package: github.com/karrick/goavro
-  version: 0.3.1
+- package: github.com/linkedin/goavro
+  version: 2.0.0
 - package: github.com/miekg/dns
   version: 0598bd43cf51d0375c5bcd3a42e807cc19b3b7d9
 - package: github.com/pkg/errors

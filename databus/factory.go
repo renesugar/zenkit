@@ -132,13 +132,13 @@ func encode(codec SchemaEncoder, data interface{}) ([]byte, error) {
 	}
 	var v interface{}
 	json.Unmarshal(marshalled, &v)
-	return codec.TextualFromNative([]byte{}, v)
+	return codec.BinaryFromNative([]byte{}, v)
 }
 
 // decode decodes data using the SchemaDecoder provided, then applies it to the
 // pointer provided via JSON marshal/unmarshal.
 func decode(codec SchemaDecoder, data []byte, ptr interface{}) error {
-	native, _, err := codec.NativeFromTextual(data)
+	native, _, err := codec.NativeFromBinary(data)
 	if err != nil {
 		return errors.Wrap(err, "failed to get native value from text")
 	}
