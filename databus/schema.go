@@ -9,7 +9,7 @@ import (
 // SchemaDecoder decodes text encodings according to a schema into native Go
 // types.
 type SchemaDecoder interface {
-	// NativeFromBinary converts textual (JSON) data into native Go types
+	// NativeFromBinary converts binary Avro data into native Go types
 	// according to a schema.
 	NativeFromBinary([]byte) (interface{}, []byte, error)
 }
@@ -17,8 +17,8 @@ type SchemaDecoder interface {
 // SchemaEncoder encodes native Go types according to a schema to a textual
 // representation.
 type SchemaEncoder interface {
-	// BinaryFromNative encodes Go native types to a JSON representation of
-	// a schema.
+	// BinaryFromNative encodes Go native types to a binary-encoded
+	// representation of a schema.
 	BinaryFromNative([]byte, interface{}) ([]byte, error)
 }
 
