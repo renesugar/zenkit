@@ -3,13 +3,12 @@ package databus_test
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"math/rand"
-	"strconv"
 
 	"github.com/Shopify/sarama"
 	"github.com/bsm/sarama-cluster"
 	"github.com/datamountaineer/schema-registry"
+	"github.com/linkedin/goavro"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
@@ -73,6 +72,18 @@ type TestMessageTypeStructPtr struct {
 	TestValue *ValTest `zenkit:"message-value"`
 }
 
+func struct2native(ob interface{}) (map[string]interface{}, error) {
+	bytes, err := json.Marshal(ob)
+	if err != nil {
+		return nil, err
+	}
+	var native map[string]interface{}
+	if err := json.Unmarshal(bytes, &native); err != nil {
+		return nil, err
+	}
+	return native, nil
+}
+
 var _ = Describe("Consumer", func() {
 
 	var (
@@ -98,6 +109,7 @@ var _ = Describe("Consumer", func() {
 			"key-test":     3,
 			"val-test":     4,
 		}
+		codecs map[string]*goavro.Codec
 	)
 
 	BeforeEach(func() {
@@ -108,6 +120,10 @@ var _ = Describe("Consumer", func() {
 		valueSchema = "object-value"
 		schemaRegistryClient = GetSchemaRegistryMockClient(schemas, ids)
 		err = nil
+		codecs = map[string]*goavro.Codec{}
+		for k, s := range schemas {
+			codecs[k], _ = goavro.NewCodec(s)
+		}
 	})
 
 	JustBeforeEach(func() {
@@ -132,8 +148,13 @@ var _ = Describe("Consumer", func() {
 			for i := 0; i < 5; i++ {
 				key := test.RandString(8)
 				value := rand.Intn(100)
-				keybin := AvroSerialize([]byte(fmt.Sprintf(`"%s"`, key)), 1)
-				valbin := AvroSerialize([]byte(strconv.Itoa(value)), 2)
+
+				keyavro, err := codecs[keySchema].BinaryFromNative(nil, key)
+				Ω(err).ShouldNot(HaveOccurred())
+				keybin := AvroSerialize(keyavro, 1)
+				valavro, err := codecs[valueSchema].BinaryFromNative(nil, value)
+				Ω(err).ShouldNot(HaveOccurred())
+				valbin := AvroSerialize(valavro, 2)
 
 				saramaMessage := &sarama.ConsumerMessage{
 					Key:   keybin,
@@ -345,13 +366,16 @@ var _ = Describe("Consumer", func() {
 				key := KeyTest{test.RandString(8), rand.Intn(100)}
 				value := ValTest{test.RandString(8)}
 
-				keyjson, err := json.Marshal(key)
+				keynative, _ := struct2native(key)
+				valnative, _ := struct2native(value)
+
+				keyavro, err := codecs[keySchema].BinaryFromNative(nil, keynative)
 				Ω(err).ShouldNot(HaveOccurred())
-				valjson, err := json.Marshal(value)
+				valavro, err := codecs[valueSchema].BinaryFromNative(nil, valnative)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				keybin := AvroSerialize(keyjson, 3)
-				valbin := AvroSerialize(valjson, 4)
+				keybin := AvroSerialize(keyavro, 3)
+				valbin := AvroSerialize(valavro, 4)
 
 				saramaMessage := &sarama.ConsumerMessage{
 					Key:   keybin,
@@ -390,13 +414,16 @@ var _ = Describe("Consumer", func() {
 				key := &KeyTest{test.RandString(8), rand.Intn(100)}
 				value := &ValTest{test.RandString(8)}
 
-				keyjson, err := json.Marshal(key)
+				keynative, _ := struct2native(key)
+				valnative, _ := struct2native(value)
+
+				keyavro, err := codecs[keySchema].BinaryFromNative(nil, keynative)
 				Ω(err).ShouldNot(HaveOccurred())
-				valjson, err := json.Marshal(value)
+				valavro, err := codecs[valueSchema].BinaryFromNative(nil, valnative)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				keybin := AvroSerialize(keyjson, 3)
-				valbin := AvroSerialize(valjson, 4)
+				keybin := AvroSerialize(keyavro, 3)
+				valbin := AvroSerialize(valavro, 4)
 
 				saramaMessage := &sarama.ConsumerMessage{
 					Key:   keybin,

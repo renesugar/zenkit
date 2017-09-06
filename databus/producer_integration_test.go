@@ -3,9 +3,9 @@
 package databus_test
 
 import (
+	"github.com/linkedin/goavro"
 	"github.com/zenoss/zenkit/test"
 
-	"encoding/json"
 	"fmt"
 	"math/rand"
 
@@ -81,12 +81,14 @@ var _ = Describe("Producer", func() {
 		var saramaMessage *sarama.ConsumerMessage
 		Eventually(partConsumer.Messages()).Should(Receive(&saramaMessage))
 
-		keyjson, _ := json.Marshal(key)
-		keybin := AvroSerialize(keyjson, keyID)
+		keycodec, _ := goavro.NewCodec(keySchema)
+		keyavro, _ := keycodec.BinaryFromNative(nil, key)
+		keybin := AvroSerialize(keyavro, keyID)
 		Ω(saramaMessage.Key).Should(Equal(keybin))
 
-		valjson, _ := json.Marshal(value)
-		valbin := AvroSerialize(valjson, valID)
+		valcodec, _ := goavro.NewCodec(valueSchema)
+		valavro, _ := valcodec.BinaryFromNative(nil, value)
+		valbin := AvroSerialize(valavro, valID)
 		Ω(saramaMessage.Value).Should(Equal(valbin))
 	})
 
