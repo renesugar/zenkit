@@ -25,11 +25,16 @@ import (
 )
 
 type testIdentity struct {
-	id string
+	id     string
+	tenant string
 }
 
 func (t *testIdentity) ID() string {
 	return t.id
+}
+
+func (t *testIdentity) Tenant() string {
+	return t.tenant
 }
 
 type errorLogger struct {
@@ -40,12 +45,12 @@ func (logger *errorLogger) LogError(msg string, keys ...interface{}) {
 	logger.Buf += fmt.Sprint(msg)
 }
 
-func newClaims(id string) claims.StandardClaims {
+func newClaims(id string, audience []string) claims.StandardClaims {
 	now := time.Now()
 	return claims.StandardClaims{
 		Iss: "test",
 		Sub: id,
-		Aud: []string{"testers"},
+		Aud: audience,
 		Exp: now.Add(time.Hour).Unix(),
 		Nbf: now.Unix(),
 		Iat: now.Unix(),
@@ -53,22 +58,23 @@ func newClaims(id string) claims.StandardClaims {
 	}
 }
 
-func newClaimsMap(id string) claims.StandardClaimsMap {
-	return claims.StandardClaimsFromStruct(newClaims(id))
+func newClaimsMap(id string, audience []string) claims.StandardClaimsMap {
+	return claims.StandardClaimsFromStruct(newClaims(id, audience))
 }
 
 var _ = Describe("Auth utilities", func() {
 
 	var (
-		id      string
-		ident   Identity
-		file    *os.File
-		token   *jwtpkg.Token
-		secret  = []byte("secret")
-		svc     *goa.Service
-		resp    *httptest.ResponseRecorder
-		req     *http.Request
-		handler = func(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
+		id       string
+		audience []string
+		ident    Identity
+		file     *os.File
+		token    *jwtpkg.Token
+		secret   = []byte("secret")
+		svc      *goa.Service
+		resp     *httptest.ResponseRecorder
+		req      *http.Request
+		handler  = func(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
 			token = jwt.ContextJWT(ctx)
 			ident = ContextIdentity(ctx)
 			return nil
@@ -90,6 +96,7 @@ var _ = Describe("Auth utilities", func() {
 		svc.WithLogger(&NullLogAdapter{})
 		req, _ = http.NewRequest("", "http://example.com/", nil)
 		resp = httptest.NewRecorder()
+		audience = []string{"tenant"}
 	})
 
 	AfterEach(func() {
@@ -106,7 +113,7 @@ var _ = Describe("Auth utilities", func() {
 	}
 
 	signedToken := func() string {
-		stdClaims := newClaims(id)
+		stdClaims := newClaims(id, audience)
 		t := jwtpkg.NewWithClaims(jwtpkg.SigningMethodHS256, stdClaims)
 		signed, _ := t.SignedString(secret)
 		return signed
@@ -156,10 +163,9 @@ var _ = Describe("Auth utilities", func() {
 	})
 
 	Context("context identity functions", func() {
-
 		It("should be able to pass an identity to the context", func() {
 			id = test.RandString(8)
-			ident = &testIdentity{id}
+			ident = &testIdentity{id, "tenant"}
 
 			ctx := WithIdentity(context.Background(), ident)
 			received := ContextIdentity(ctx)
@@ -238,14 +244,33 @@ var _ = Describe("Auth utilities", func() {
 		})
 
 		Context("using the default validator middleware", func() {
-			It("should pass the identity through the context", func() {
+			JustBeforeEach(func() {
 				id = test.RandString(8)
 				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", signedToken()))
 				ctx := context.Background()
 				err := getHandler(DefaultJWTValidation)(ctx, resp, req)
 				Ω(err).ShouldNot(HaveOccurred())
+			})
+
+			It("should pass the id through the context", func() {
 				Ω(ident).ShouldNot(BeNil())
 				Ω(ident.ID()).Should(Equal(id))
+			})
+
+			It("should pass the tenant through the context", func() {
+				Ω(ident).ShouldNot(BeNil())
+				Ω(ident.Tenant()).Should(Equal("tenant"))
+			})
+
+			Context("and the audience is incorrect", func() {
+				BeforeEach(func() {
+					audience = []string{"more", "than", "one", "value"}
+				})
+
+				It("should return empty for tenant", func() {
+					Ω(ident).ShouldNot(BeNil())
+					Ω(ident.Tenant()).Should(BeEmpty())
+				})
 			})
 		})
 
