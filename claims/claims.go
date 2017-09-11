@@ -73,14 +73,6 @@ func ValidateIssuer(claims Claims, issuers []string) error {
 	return nil
 }
 
-// ValidateAudience verifies that the audience in claims contains audience
-func ValidateAudience(claims Claims, audience string) error {
-	if !verifyAudience(claims.Audience(), audience) {
-		return ErrAudience
-	}
-	return nil
-}
-
 func verifyIssuerExists(claimed string) bool {
 	return claimed != ""
 }
@@ -100,15 +92,6 @@ func verifySubject(claimed string) bool {
 
 func verifyAudienceExists(claimed []string) bool {
 	return claimed != nil && len(claimed) > 0
-}
-
-func verifyAudience(claimed []string, audience string) bool {
-	for _, aud := range claimed {
-		if aud == audience {
-			return true
-		}
-	}
-	return false
 }
 
 func verifyExpiresAt(claimed int64, now int64) bool {

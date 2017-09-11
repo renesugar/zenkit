@@ -105,19 +105,6 @@ func ContextIdentity(ctx context.Context) Identity {
 	return nil
 }
 
-// WithServiceName registers the service name to the context
-func WithServiceName(ctx context.Context, service string) context.Context {
-	return context.WithValue(ctx, serviceNameKey, service)
-}
-
-// ContextServiceName gets the service name from the context
-func ContextServiceName(ctx context.Context) string {
-	if v := ctx.Value(serviceNameKey); v != nil {
-		return v.(string)
-	}
-	return ""
-}
-
 func ReadKeyFromFS(logger ErrorLogger, filename string) ([]byte, error) {
 	// Get the secret key
 	var key []byte

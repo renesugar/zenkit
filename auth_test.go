@@ -173,23 +173,6 @@ var _ = Describe("Auth utilities", func() {
 		})
 	})
 
-	Context("when retrieving service from the context", func() {
-		Context("when the service name is on the context", func() {
-			It("should be retrieved", func() {
-				ctx := WithServiceName(context.Background(), "servicename")
-				received := ContextServiceName(ctx)
-				Ω(received).Should(Equal("servicename"))
-			})
-		})
-		Context("when the service name is not on the context", func() {
-			It("should be empty string", func() {
-				ctx := context.Background()
-				received := ContextServiceName(ctx)
-				Ω(received).Should(Equal(""))
-			})
-		})
-	})
-
 	Context("using the dev mode middleware", func() {
 
 		It("should inject an authorization header when none exists", func() {
