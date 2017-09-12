@@ -9,19 +9,6 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func newStandardClaims() StandardClaims {
-	now := time.Now()
-	return StandardClaims{
-		Iss: "someone",
-		Sub: "abcd",
-		Aud: []string{"tester"},
-		Exp: now.Add(ValidDuration).Unix(),
-		Nbf: now.Unix(),
-		Iat: now.Unix(),
-		Jti: "0",
-	}
-}
-
 func newStandardClaimsMap() StandardClaimsMap {
 	now := time.Now()
 	return StandardClaimsMap{
@@ -38,13 +25,13 @@ func newStandardClaimsMap() StandardClaimsMap {
 var _ = Describe("Standard Claims", func() {
 	var (
 		now           = time.Now().Unix()
-		claims        = newStandardClaims()
+		claims        = NewStandardClaims("someone", "abcd", []string{"tester"})
 		claimsMap     = newStandardClaimsMap()
 		validIssuers  = []string{"someone"}
 		validAudience = "tester"
 	)
 	BeforeEach(func() {
-		claims = newStandardClaims()
+		claims = NewStandardClaims("someone", "abcd", []string{"tester"})
 		claimsMap = newStandardClaimsMap()
 	})
 	Context("when creating a StandardClaimsMap", func() {
@@ -205,15 +192,6 @@ var _ = Describe("Standard Claims", func() {
 				It("should return an error", func() {
 					err := claims.Validate(validIssuers, validAudience)
 					Ω(err).Should(Equal(ErrIssuer))
-				})
-			})
-			Context("when the audience is not valid", func() {
-				BeforeEach(func() {
-					claims.Aud = []string{"keanu"}
-				})
-				It("should return an error", func() {
-					err := claims.Validate(validIssuers, validAudience)
-					Ω(err).Should(Equal(ErrAudience))
 				})
 			})
 			Context("when the token is expired", func() {

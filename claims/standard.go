@@ -1,5 +1,7 @@
 package claims
 
+import "time"
+
 var (
 	// standardClaimsMap defines the shape and fields for a map containing
 	// standard JWT claims
@@ -89,10 +91,8 @@ func (m StandardClaimsMap) Valid() error {
 func (m StandardClaimsMap) Validate(issuers []string, audience string) error {
 	if err := m.Valid(); err != nil {
 		return err
-	} else if err := ValidateIssuer(m, issuers); err != nil {
-		return err
 	}
-	return ValidateAudience(m, audience)
+	return ValidateIssuer(m, issuers)
 }
 
 // StandardClaims implements registered claim names according to RFC 7519
@@ -104,6 +104,20 @@ type StandardClaims struct {
 	Nbf int64    `json:"nbf"`
 	Iat int64    `json:"iat"`
 	Jti string   `json:"jti"`
+}
+
+// NewStandardClaims creates a new StandardClaims
+func NewStandardClaims(iss, sub string, aud []string) StandardClaims {
+	now := time.Now()
+	return StandardClaims{
+		Iss: iss,
+		Sub: sub,
+		Aud: aud,
+		Exp: now.Add(ValidDuration).Unix(),
+		Nbf: now.Unix(),
+		Iat: now.Unix(),
+		Jti: "0",
+	}
 }
 
 // StandardClaimsFromMap assumes m is Valid and
@@ -165,8 +179,6 @@ func (claims StandardClaims) Valid() error {
 func (claims StandardClaims) Validate(issuers []string, audience string) error {
 	if err := claims.Valid(); err != nil {
 		return err
-	} else if err := ValidateIssuer(claims, issuers); err != nil {
-		return err
 	}
-	return ValidateAudience(claims, audience)
+	return ValidateIssuer(claims, issuers)
 }
