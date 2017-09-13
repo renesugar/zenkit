@@ -65,4 +65,15 @@ var _ = Describe("Metrics", func() {
 		TimedFunc(context.Background())
 	})
 
+	It("should be able to increment a counter", func() {
+		reg := metrics.NewRegistry()
+		ctx := WithMetrics(context.Background(), reg)
+		IncrementCounter(ctx, "my.test.counter", 1)
+		metric := reg.Get("my.test.counter")
+		Ω(metric).ShouldNot(BeNil())
+	})
+
+	It("should not panic counter increment if no registry is defined", func() {
+		IncrementCounter(context.Background(), "my.test.counter", 1)
+	})
 })

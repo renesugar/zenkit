@@ -34,6 +34,15 @@ func MeasureTime(ctx context.Context) func() {
 	return exit
 }
 
+func IncrementCounter(ctx context.Context, name string, inc int64) {
+	registry := ContextMetrics(ctx)
+	if registry == nil {
+		return
+	}
+	ctr := metrics.GetOrRegisterCounter(name, registry)
+	ctr.Inc(inc)
+}
+
 func MetricsMiddleware() goa.Middleware {
 	m := metrics.NewRegistry()
 	return func(h goa.Handler) goa.Handler {
