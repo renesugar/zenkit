@@ -216,6 +216,8 @@ disable options to automatically add files to the repo, and click the *Create
 repository* button.  Follow the instructions to _Push an existing repository
 from the command line_.
 
+Add the topic `zing` to the repo's list of topics so that it can be queryable.
+
 There are several GitHub configuration items that are required for the new repo.
 Browse to the _Settings_ tab in the new repo.  In the _Collaborations & teams_ 
 settings, add the following teams and permissions:
