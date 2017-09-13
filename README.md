@@ -71,8 +71,8 @@ And browse the currently-trivial Swagger spec:
 
     http :8080/_admin/swagger
 
-You'll need to [add your source](#create-github-repo) to Github and 
-[create Jenkins jobs](create-jenkins-jobs) for continuous integration.
+You'll need to [add your source](ZENOSS_EMPLOYEES.md#create-github-repo) to Github and 
+[create Jenkins jobs](ZENOSS_EMPLOYEES.md#create-jenkins-jobs) for continuous integration.
 
 When you're ready to add business logic to your new service,
 [proceed](#microservice-development).
