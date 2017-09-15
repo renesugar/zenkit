@@ -133,5 +133,5 @@ const (
 
 const (
 	// This token is signed with the secret "secret" and gives the bearer the scopes "api:admin api:access"
-	devJWT = `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZXZlbG9wZXIiLCJuYW1lIjoiQS4gRGV2ZWxvcGVyLCBFc3EuIiwiYWRtaW4iOnRydWUsInNjb3BlcyI6ImFwaTphZG1pbiBhcGk6YWNjZXNzIn0.e2YYHulpdvpnBdvdpUJyyJnC2xsm4VMrs6riy9WX4Ug`
+	devJWT = `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJBdXRoMCIsInN1YiI6IjEiLCJhdWQiOlsiYW55b25lIl0sImV4cCI6MTYwNTUxMTc4NiwibmJmIjoxNTA1NDI1Mzg2LCJpYXQiOjE1MDU0MjUzODYsImp0aSI6IjEiLCJzY29wZXMiOiJhcGk6YWRtaW4gYXBpOmFjY2VzcyJ9.cmw2-w7efRhtNMDXypaI84UYHFZ_CmG0m9Jb6SnzX1Q`
 )
