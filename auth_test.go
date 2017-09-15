@@ -180,7 +180,7 @@ var _ = Describe("Auth utilities", func() {
 			err := DevModeMiddleware(h)(context.Background(), resp, req)
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(ident).ShouldNot(BeNil())
-			Ω(ident.ID()).Should(Equal("developer"))
+			Ω(ident.ID()).Should(Equal("1"))
 		})
 
 		It("should respect an existing authorization header", func() {
