@@ -227,32 +227,36 @@ var _ = Describe("Auth utilities", func() {
 		})
 
 		Context("using the default validator middleware", func() {
-			JustBeforeEach(func() {
-				id = test.RandString(8)
-				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", signedToken()))
-				ctx := context.Background()
-				err := getHandler(DefaultJWTValidation)(ctx, resp, req)
-				Ω(err).ShouldNot(HaveOccurred())
-			})
+			Context("and the audience is correct", func() {
+				JustBeforeEach(func() {
+					id = test.RandString(8)
+					req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", signedToken()))
+					ctx := context.Background()
+					err := getHandler(DefaultJWTValidation)(ctx, resp, req)
+					Ω(err).ShouldNot(HaveOccurred())
+				})
 
-			It("should pass the id through the context", func() {
-				Ω(ident).ShouldNot(BeNil())
-				Ω(ident.ID()).Should(Equal(id))
-			})
+				It("should pass the id through the context", func() {
+					Ω(ident).ShouldNot(BeNil())
+					Ω(ident.ID()).Should(Equal(id))
+				})
 
-			It("should pass the tenant through the context", func() {
-				Ω(ident).ShouldNot(BeNil())
-				Ω(ident.Tenant()).Should(Equal("tenant"))
+				It("should pass the tenant through the context", func() {
+					Ω(ident).ShouldNot(BeNil())
+					Ω(ident.Tenant()).Should(Equal("tenant"))
+				})
 			})
 
 			Context("and the audience is incorrect", func() {
 				BeforeEach(func() {
+					id = test.RandString(8)
 					audience = []string{"more", "than", "one", "value"}
+					req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", signedToken()))
 				})
 
-				It("should return empty for tenant", func() {
-					Ω(ident).ShouldNot(BeNil())
-					Ω(ident.Tenant()).Should(BeEmpty())
+				It("should return an error", func() {
+					err := getHandler(DefaultJWTValidation)(context.Background(), resp, req)
+					Ω(err).Should(HaveOccurred())
 				})
 			})
 		})
