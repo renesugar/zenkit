@@ -55,6 +55,14 @@ func JWTValidatorFunc(m JWTValidator) goa.Middleware {
 			ident := &tokenIdentity{stdClaims}
 			ctx = WithIdentity(ctx, ident)
 			ctx = goa.WithLogContext(ctx, "user_id", ident.ID())
+			if len(ident.Tenant()) == 0 {
+				message := "Unable to retrieve tenant from token"
+				logger := ContextLogger(ctx)
+				if logger != nil {
+					logger.Debug(message)
+				}
+				return errors.WithStack(errors.New(message))
+			}
 			return h(ctx, rw, req)
 		}
 	}
@@ -132,6 +140,29 @@ const (
 )
 
 const (
-	// This token is signed with the secret "secret" and gives the bearer the scopes "api:admin api:access"
+	/*
+		This token is signed with the secret "secret" and gives the bearer the scopes "api:admin api:access"
+
+		HEADER:
+
+		{
+		  "alg": "HS256",
+		  "typ": "JWT"
+		}
+
+		PAYLOAD:
+		{
+			"iss": "Auth0",
+			"sub": "1",
+			"aud": [
+				"anyone"
+			],
+			"exp": 1605511786,
+			"nbf": 1505425386,
+			"iat": 1505425386,
+			"jti": "1",
+			"scopes": "api:admin api:access"
+		}
+	*/
 	devJWT = `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJBdXRoMCIsInN1YiI6IjEiLCJhdWQiOlsiYW55b25lIl0sImV4cCI6MTYwNTUxMTc4NiwibmJmIjoxNTA1NDI1Mzg2LCJpYXQiOjE1MDU0MjUzODYsImp0aSI6IjEiLCJzY29wZXMiOiJhcGk6YWRtaW4gYXBpOmFjY2VzcyJ9.cmw2-w7efRhtNMDXypaI84UYHFZ_CmG0m9Jb6SnzX1Q`
 )
