@@ -2,6 +2,7 @@ package zenkit
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -24,6 +25,27 @@ var (
 	DefaultJWTValidation = JWTValidatorFunc(func(_ context.Context) error { return nil })
 	KeyFileTimeout       = 30 * time.Second
 	localJWT             *design.SecuritySchemeDefinition
+	devJWT               string
+
+	// These claims are used to populate the dev token (devJWT) using the secret defined by signingKey
+	//  - exp is equivalent to Monday, November 16, 2020 7:29:46 AM GMT
+	//  - iat/nbf is equivalent to Thursday, September 14, 2017 9:43:06 PM GMT
+	// These claims are a union of claims that could be provided by Auth0 or the edge service:
+	//  - "https://zing.zenoss/tnt" and "https://zing.zenoss/src" are used to simulate tokens provided by Auth0
+	//  - "aud" and "src" are used to simulate tokens from the edge service.
+	devClaims = jwtgo.MapClaims{
+		"iss": "Auth0",
+		"sub": "1",
+		"aud": []string{"anyone"},
+		"https://zing.zenoss/tnt": "anyone",
+		"exp": 1605511786,
+		"nbf": 1505425386,
+		"iat": 1505425386,
+		"jti": "1",
+		"scopes": "api:admin api:access",
+		"src": "rm1",
+		"https://zing.zenoss/src": "rm1",
+	}
 )
 
 func JWT() *design.SecuritySchemeDefinition {
@@ -72,6 +94,16 @@ func DevModeMiddleware(h goa.Handler) goa.Handler {
 	return func(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
 		header := req.Header.Get("Authorization")
 		if header == "" {
+			if len(devJWT) == 0 {
+				token := jwtgo.NewWithClaims(jwtgo.SigningMethodHS256, devClaims)
+				signedToken, err := token.SignedString([]byte(signingKey))
+				if err != nil {
+					if logger := ContextLogger(ctx); logger != nil {
+						logger.WithError(err).Fatal("Could not create dev token")
+					}
+				}
+				devJWT = fmt.Sprintf("Bearer %s", signedToken)
+			}
 			req.Header.Set("Authorization", devJWT)
 		}
 		return h(ctx, rw, req)
@@ -140,29 +172,5 @@ const (
 )
 
 const (
-	/*
-		This token is signed with the secret "secret" and gives the bearer the scopes "api:admin api:access"
-
-		HEADER:
-
-		{
-		  "alg": "HS256",
-		  "typ": "JWT"
-		}
-
-		PAYLOAD:
-		{
-			"iss": "Auth0",
-			"sub": "1",
-			"aud": [
-				"anyone"
-			],
-			"exp": 1605511786,
-			"nbf": 1505425386,
-			"iat": 1505425386,
-			"jti": "1",
-			"scopes": "api:admin api:access"
-		}
-	*/
-	devJWT = `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJBdXRoMCIsInN1YiI6IjEiLCJhdWQiOlsiYW55b25lIl0sImV4cCI6MTYwNTUxMTc4NiwibmJmIjoxNTA1NDI1Mzg2LCJpYXQiOjE1MDU0MjUzODYsImp0aSI6IjEiLCJzY29wZXMiOiJhcGk6YWRtaW4gYXBpOmFjY2VzcyJ9.cmw2-w7efRhtNMDXypaI84UYHFZ_CmG0m9Jb6SnzX1Q`
+	signingKey = "secret"
 )
