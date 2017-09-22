@@ -11,6 +11,7 @@ import (
 
 	jwtpkg "github.com/dgrijalva/jwt-go"
 	"github.com/goadesign/goa"
+	"github.com/goadesign/goa/client"
 	"github.com/goadesign/goa/design"
 	"github.com/goadesign/goa/design/apidsl"
 	"github.com/goadesign/goa/dslengine"
@@ -193,6 +194,40 @@ var _ = Describe("Auth utilities", func() {
 			Ω(ident.ID()).Should(Equal(id))
 		})
 
+	})
+
+	Context("using the jwt signer", func() {
+		It("should return nil if there is no auth on the header", func() {
+			signer := JWTSigner(req)
+			Ω(signer).Should(BeNil())
+		})
+
+		It("should not set the token type if none is specified on the header", func() {
+			req.Header.Set("Authorization", "abc123")
+			signer := JWTSigner(req)
+			Ω(signer).ShouldNot(BeNil())
+
+			token, err := signer.TokenSource.Token()
+			Ω(err).ShouldNot(HaveOccurred())
+
+			staticToken, ok := token.(*client.StaticToken)
+			Ω(ok).Should(BeTrue())
+			Ω(staticToken.Value).To(Equal("abc123"))
+		})
+
+		It("should set the token and the type if it is specified on the header", func() {
+			req.Header.Set("Authorization", "Bearer abc123")
+			signer := JWTSigner(req)
+			Ω(signer).ShouldNot(BeNil())
+
+			token, err := signer.TokenSource.Token()
+			Ω(err).ShouldNot(HaveOccurred())
+
+			staticToken, ok := token.(*client.StaticToken)
+			Ω(ok).Should(BeTrue())
+			Ω(staticToken.Value).To(Equal("abc123"))
+			Ω(staticToken.Type).To(Equal("Bearer"))
+		})
 	})
 
 	Context("JWT middleware factory", func() {
