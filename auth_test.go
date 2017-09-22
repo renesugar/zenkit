@@ -94,7 +94,7 @@ var _ = Describe("Auth utilities", func() {
 		defer file.Close()
 		file.Write(secret)
 		svc = goa.New(test.RandString(8))
-		svc.WithLogger(&NullLogAdapter{})
+		svc.WithLogger(ServiceLogger())
 		req, _ = http.NewRequest("", "http://example.com/", nil)
 		resp = httptest.NewRecorder()
 		audience = []string{"tenant"}
@@ -188,7 +188,7 @@ var _ = Describe("Auth utilities", func() {
 			id = test.RandString(8)
 			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", signedToken()))
 			h := getHandler(DefaultJWTValidation)
-			err := DevModeMiddleware(h)(context.Background(), resp, req)
+			err := DevModeMiddleware(h)(svc.Context, resp, req)
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(ident).ShouldNot(BeNil())
 			Ω(ident.ID()).Should(Equal(id))

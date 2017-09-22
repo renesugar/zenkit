@@ -81,10 +81,6 @@ func JWTValidatorFunc(m JWTValidator) goa.Middleware {
 			ctx = goa.WithLogContext(ctx, "user_id", ident.ID())
 			if len(ident.Tenant()) == 0 {
 				message := "Unable to retrieve tenant from token"
-				logger := ContextLogger(ctx)
-				if logger != nil {
-					logger.Debug(message)
-				}
 				return errors.WithStack(errors.New(message))
 			}
 			return h(ctx, rw, req)
