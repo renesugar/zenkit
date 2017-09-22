@@ -93,13 +93,7 @@ func DevModeMiddleware(h goa.Handler) goa.Handler {
 		header := req.Header.Get("Authorization")
 		if header == "" {
 			if len(devJWT) == 0 {
-				token := jwtgo.NewWithClaims(jwtgo.SigningMethodHS256, devClaims)
-				signedToken, err := token.SignedString([]byte(signingKey))
-				if err != nil {
-					if logger := ContextLogger(ctx); logger != nil {
-						logger.WithError(err).Fatal("Could not create dev token")
-					}
-				}
+				signedToken := BuildDevToken(ctx, jwtgo.SigningMethodHS256)
 				devJWT = fmt.Sprintf("Bearer %s", signedToken)
 			}
 			req.Header.Set("Authorization", devJWT)
@@ -122,6 +116,12 @@ func JWTSigner(req *http.Request) *client.JWTSigner {
 		token.Value = strings.Join(parts[1:], " ")
 	}
 	return &client.JWTSigner{TokenSource: &client.StaticTokenSource{StaticToken: token}}
+}
+
+func BuildDevToken(ctx context.Context, signingMethod jwtgo.SigningMethod) string {
+	token := jwtgo.NewWithClaims(signingMethod, devClaims)
+	signedToken, _ := token.SignedString([]byte(signingKey))
+	return signedToken
 }
 
 type Identity interface {
