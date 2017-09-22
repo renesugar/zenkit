@@ -22,7 +22,7 @@ import:
   - project
   - project/options
 - package: github.com/goadesign/goa
-  version: 94c5f00a452130a8732b2e3348eb9259be23a224
+  version: 0ad2e960bfbfb49cf94d3ce689a9426ef006babb
   subpackages:
   - design
   - design/apidsl
