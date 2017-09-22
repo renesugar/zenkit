@@ -63,6 +63,25 @@ func newClaimsMap(id string, audience []string) claims.StandardClaimsMap {
 	return claims.StandardClaimsFromStruct(newClaims(id, audience))
 }
 
+type mockSigningMethod struct {
+	signature  string
+	err        error
+}
+
+func (mock *mockSigningMethod) Verify(signingString, signature string, key interface{}) error {
+	// unused
+	return nil
+}
+
+func (mock *mockSigningMethod) Sign(signingString string, key interface{}) (string, error) {
+	return mock.signature, mock.err
+}
+
+func (mock *mockSigningMethod) Alg() string {
+	// unused
+	return "mock"
+}
+
 var _ = Describe("Auth utilities", func() {
 
 	var (
@@ -171,6 +190,31 @@ var _ = Describe("Auth utilities", func() {
 			ctx := WithIdentity(context.Background(), ident)
 			received := ContextIdentity(ctx)
 			Ω(received).Should(Equal(ident))
+		})
+	})
+
+	Context("when building the dev token", func() {
+		It("should populate claims for Auth0 and edge", func() {
+			signedToken := BuildDevToken(context.Background(), jwtpkg.SigningMethodHS256)
+			Ω(signedToken).ShouldNot(Equal(""))
+
+			keyFunc := func(*jwtpkg.Token) (interface{}, error) {
+				return []byte("secret"), nil
+			}
+			actualClaims := jwtpkg.MapClaims{}
+			token, err := jwtpkg.ParseWithClaims(signedToken, &actualClaims, keyFunc)
+			Ω(err).Should(BeNil())
+			Ω(token.Valid).Should(BeTrue())
+
+			Ω(actualClaims["sub"]).Should(Equal("1"))
+			Ω(actualClaims["scopes"]).Should(Equal("api:admin api:access"))
+			Ω(actualClaims["src"]).Should(Equal("rm1"))
+			Ω(actualClaims["https://zing.zenoss/src"]).Should(Equal("rm1"))
+			Ω(actualClaims["https://zing.zenoss/tnt"]).Should(Equal("anyone"))
+
+			audience := actualClaims["aud"].([]interface{})
+			Ω(len(audience)).Should(Equal(1))
+			Ω(audience[0].(string)).Should(Equal("anyone"))
 		})
 	})
 
