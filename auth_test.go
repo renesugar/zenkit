@@ -304,8 +304,7 @@ var _ = Describe("Auth utilities", func() {
 				}
 				id = test.RandString(8)
 				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", signedToken()))
-				ctx := context.Background()
-				err := getHandler(JWTValidatorFunc(custom))(ctx, resp, req)
+				err := getHandler(JWTValidatorFunc(custom))(svc.Context, resp, req)
 				Ω(err).Should(HaveOccurred())
 				Ω(errors.Cause(err)).Should(Equal(TestError))
 			})
