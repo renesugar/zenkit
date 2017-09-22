@@ -11,6 +11,7 @@ import (
 
 	jwtpkg "github.com/dgrijalva/jwt-go"
 	"github.com/goadesign/goa"
+	"github.com/goadesign/goa/client"
 	"github.com/goadesign/goa/design"
 	"github.com/goadesign/goa/design/apidsl"
 	"github.com/goadesign/goa/dslengine"
@@ -93,7 +94,7 @@ var _ = Describe("Auth utilities", func() {
 		defer file.Close()
 		file.Write(secret)
 		svc = goa.New(test.RandString(8))
-		svc.WithLogger(&NullLogAdapter{})
+		svc.WithLogger(ServiceLogger())
 		req, _ = http.NewRequest("", "http://example.com/", nil)
 		resp = httptest.NewRecorder()
 		audience = []string{"tenant"}
@@ -187,12 +188,46 @@ var _ = Describe("Auth utilities", func() {
 			id = test.RandString(8)
 			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", signedToken()))
 			h := getHandler(DefaultJWTValidation)
-			err := DevModeMiddleware(h)(context.Background(), resp, req)
+			err := DevModeMiddleware(h)(svc.Context, resp, req)
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(ident).ShouldNot(BeNil())
 			Ω(ident.ID()).Should(Equal(id))
 		})
 
+	})
+
+	Context("using the jwt signer", func() {
+		It("should return nil if there is no auth on the header", func() {
+			signer := JWTSigner(req)
+			Ω(signer).Should(BeNil())
+		})
+
+		It("should not set the token type if none is specified on the header", func() {
+			req.Header.Set("Authorization", "abc123")
+			signer := JWTSigner(req)
+			Ω(signer).ShouldNot(BeNil())
+
+			token, err := signer.TokenSource.Token()
+			Ω(err).ShouldNot(HaveOccurred())
+
+			staticToken, ok := token.(*client.StaticToken)
+			Ω(ok).Should(BeTrue())
+			Ω(staticToken.Value).To(Equal("abc123"))
+		})
+
+		It("should set the token and the type if it is specified on the header", func() {
+			req.Header.Set("Authorization", "Bearer abc123")
+			signer := JWTSigner(req)
+			Ω(signer).ShouldNot(BeNil())
+
+			token, err := signer.TokenSource.Token()
+			Ω(err).ShouldNot(HaveOccurred())
+
+			staticToken, ok := token.(*client.StaticToken)
+			Ω(ok).Should(BeTrue())
+			Ω(staticToken.Value).To(Equal("abc123"))
+			Ω(staticToken.Type).To(Equal("Bearer"))
+		})
 	})
 
 	Context("JWT middleware factory", func() {
@@ -269,8 +304,7 @@ var _ = Describe("Auth utilities", func() {
 				}
 				id = test.RandString(8)
 				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", signedToken()))
-				ctx := context.Background()
-				err := getHandler(JWTValidatorFunc(custom))(ctx, resp, req)
+				err := getHandler(JWTValidatorFunc(custom))(svc.Context, resp, req)
 				Ω(err).Should(HaveOccurred())
 				Ω(errors.Cause(err)).Should(Equal(TestError))
 			})

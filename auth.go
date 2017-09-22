@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/cenkalti/backoff"
 	jwtgo "github.com/dgrijalva/jwt-go"
 	"github.com/goadesign/goa"
+	"github.com/goadesign/goa/client"
 	"github.com/goadesign/goa/design"
 	"github.com/goadesign/goa/design/apidsl"
 	"github.com/goadesign/goa/middleware/security/jwt"
@@ -38,12 +40,12 @@ var (
 		"sub": "1",
 		"aud": []string{"anyone"},
 		"https://zing.zenoss/tnt": "anyone",
-		"exp": 1605511786,
-		"nbf": 1505425386,
-		"iat": 1505425386,
-		"jti": "1",
+		"exp":    1605511786,
+		"nbf":    1505425386,
+		"iat":    1505425386,
+		"jti":    "1",
 		"scopes": "api:admin api:access",
-		"src": "rm1",
+		"src":    "rm1",
 		"https://zing.zenoss/src": "rm1",
 	}
 )
@@ -79,10 +81,6 @@ func JWTValidatorFunc(m JWTValidator) goa.Middleware {
 			ctx = goa.WithLogContext(ctx, "user_id", ident.ID())
 			if len(ident.Tenant()) == 0 {
 				message := "Unable to retrieve tenant from token"
-				logger := ContextLogger(ctx)
-				if logger != nil {
-					logger.Debug(message)
-				}
 				return errors.WithStack(errors.New(message))
 			}
 			return h(ctx, rw, req)
@@ -108,6 +106,22 @@ func DevModeMiddleware(h goa.Handler) goa.Handler {
 		}
 		return h(ctx, rw, req)
 	}
+}
+
+func JWTSigner(req *http.Request) *client.JWTSigner {
+	token := &client.StaticToken{}
+
+	parts := strings.Fields(req.Header.Get("Authorization"))
+	switch len(parts) {
+	case 0:
+		return nil
+	case 1:
+		token.Value = parts[0]
+	default:
+		token.Type = parts[0]
+		token.Value = strings.Join(parts[1:], " ")
+	}
+	return &client.JWTSigner{TokenSource: &client.StaticTokenSource{StaticToken: token}}
 }
 
 type Identity interface {
