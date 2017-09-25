@@ -10,9 +10,14 @@ import (
 	"github.com/zenoss/zenkit"
 )
 
-var (
-	schemaRegistryFactoryKey = "schema_registry_factory"
+// key is the type used to store internal values in the context.
+type key int
 
+const (
+	schemaRegistryFactoryKey key = iota + 1
+)
+
+var (
 	// ErrFactoryNotFound occurs when the schema registry factory is not on the context
 	ErrFactoryNotFound = errors.New("schema registry factory not found on context")
 )
