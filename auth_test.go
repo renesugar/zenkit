@@ -64,8 +64,8 @@ func newClaimsMap(id string, audience []string) claims.StandardClaimsMap {
 }
 
 type mockSigningMethod struct {
-	signature  string
-	err        error
+	signature string
+	err       error
 }
 
 func (mock *mockSigningMethod) Verify(signingString, signature string, key interface{}) error {
@@ -271,6 +271,28 @@ var _ = Describe("Auth utilities", func() {
 			Ω(ok).Should(BeTrue())
 			Ω(staticToken.Value).To(Equal("abc123"))
 			Ω(staticToken.Type).To(Equal("Bearer"))
+		})
+	})
+
+	Context("with NewJWTMiddleware", func() {
+		Context("when the KeyFunc fails", func() {
+			keysFunc := func() ([]jwt.Key, error) {
+				return []jwt.Key{}, errors.New("bad bad")
+			}
+			It("should fail to create middleware", func() {
+				_, err := NewJWTMiddleware(keysFunc, nil, security)
+				Ω(err).Should(HaveOccurred())
+			})
+		})
+		Context("when the KeyFunc succeeds", func() {
+			keysFunc := func() ([]jwt.Key, error) {
+				return []jwt.Key{secret}, nil
+			}
+			It("should create middleware", func() {
+				mw, err := NewJWTMiddleware(keysFunc, nil, security)
+				Ω(err).Should(BeNil())
+				Ω(mw).Should(Not(BeNil()))
+			})
 		})
 	})
 

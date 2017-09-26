@@ -21,6 +21,10 @@ import (
 
 type JWTValidator func(ctx context.Context) error
 
+// KeysFunc returns a slice of one or more jwt.Key
+// A standard way to create these keys from []byte is: []jwt.Key{mybytes}
+type KeysFunc func() ([]jwt.Key, error)
+
 var (
 	FS                   = afero.NewReadOnlyFs(afero.NewOsFs())
 	AuthorizationHeader  = "Authorization"
@@ -57,6 +61,15 @@ func JWT() *design.SecuritySchemeDefinition {
 		})
 	}
 	return localJWT
+}
+
+// NewJWTMiddleware creates a goa JWT middleware using keyFunc to return the key
+func NewJWTMiddleware(keysFunc KeysFunc, validator goa.Middleware, security *goa.JWTSecurity) (goa.Middleware, error) {
+	keys, err := keysFunc()
+	if err != nil {
+		return nil, errors.Wrap(err, "Cannot read key(s) to create JWT middleware")
+	}
+	return jwt.New(jwt.NewSimpleResolver(keys), validator, security), nil
 }
 
 func JWTMiddleware(logger ErrorLogger, filename string, validator goa.Middleware, security *goa.JWTSecurity) (goa.Middleware, error) {
