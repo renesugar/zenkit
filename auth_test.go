@@ -2,6 +2,7 @@ package zenkit_test
 
 import (
 	"context"
+	"crypto/rsa"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -85,16 +86,35 @@ func (mock *mockSigningMethod) Alg() string {
 var _ = Describe("Auth utilities", func() {
 
 	var (
-		id       string
-		audience []string
-		ident    Identity
-		file     *os.File
-		token    *jwtpkg.Token
-		secret   = []byte("secret")
-		svc      *goa.Service
-		resp     *httptest.ResponseRecorder
-		req      *http.Request
-		handler  = func(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
+		id           string
+		audience     []string
+		ident        Identity
+		file         *os.File
+		token        *jwtpkg.Token
+		secret       = []byte("secret")
+		rsaPublicKey = []byte(`-----BEGIN CERTIFICATE-----
+MIIC+zCCAeOgAwIBAgIJVuc8LVr4E501MA0GCSqGSIb3DQEBCwUAMBsxGTAXBgNV
+BAMTEGptYXRvcy5hdXRoMC5jb20wHhcNMTcwNzE2MTcwNzEwWhcNMzEwMzI1MTcw
+NzEwWjAbMRkwFwYDVQQDExBqbWF0b3MuYXV0aDAuY29tMIIBIjANBgkqhkiG9w0B
+AQEFAAOCAQ8AMIIBCgKCAQEA9v9VOd3ZgbtUnvaNTRvrkMbq+bkrH5dVr/tfKSD6
+FSEfCKIo9Mr0hh3maXzXdKvrx+qHuISr+yivqTkOtQUaEsWPK8v2tp+qsqnPCXsi
+1kB4LOkq6MIzcCZ5d3b8/Z8wHRpuDWYlhvRLpyMmHzxCyX6KAERiDsxSmyRllY+O
+//4Z0ieA8F9ixVtLEKcPimLMk4eX3Xv7eVIe6WgMcDe56JQEFCHGdIBL7h5zARKl
+JdCinivfYmUcUfKnJ5b+lYvqr5zMP4XxZ0wzz073Yy0QsNkuJzWjtBcTwVFrkyzG
+Dmdq0AUYcSAE3Ez5cLqEBbbfOTdzAyjzWRpNmEG3uwiCGwIDAQABo0IwQDAPBgNV
+HRMBAf8EBTADAQH/MB0GA1UdDgQWBBRBp5DJ126Mi8ZdAIM8FQ4Z+woJyTAOBgNV
+HQ8BAf8EBAMCAoQwDQYJKoZIhvcNAQELBQADggEBALZlvTtIW4MzZV84Bp+lZ91J
+FsaduYohBjeTxuIz38uWHFYPTpJoKHwMS9yaCm4psOt3nQN8ipil2OblUHb4Pi9X
+F+b5j4TfxD9Uc6vOnzVYk1GnLFny/Sl41QDUqg78cNE81Li47pw/RfWjSkdXDa1q
+PZ7f7nhaGd0pr6KF1z/GJUA2IpgsZ/pzJmAO3BZMAFfzp3u2kpBRry+BUXf5xg+3
+xhcmeuiFwygRmLe2q0SQ1n6ekrw+RcIHfsWxqq6A028/N8GqGdbcJ5qL5ITEKJZT
+BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
+-----END CERTIFICATE-----`)
+		rsaFile *os.File
+		svc     *goa.Service
+		resp    *httptest.ResponseRecorder
+		req     *http.Request
+		handler = func(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
 			token = jwt.ContextJWT(ctx)
 			ident = ContextIdentity(ctx)
 			return nil
@@ -109,9 +129,6 @@ var _ = Describe("Auth utilities", func() {
 	)
 
 	BeforeEach(func() {
-		file, _ = ioutil.TempFile("", "zenkit-")
-		defer file.Close()
-		file.Write(secret)
 		svc = goa.New(test.RandString(8))
 		svc.WithLogger(ServiceLogger())
 		req, _ = http.NewRequest("", "http://example.com/", nil)
@@ -119,9 +136,21 @@ var _ = Describe("Auth utilities", func() {
 		audience = []string{"tenant"}
 	})
 
+	JustBeforeEach(func() {
+		file, _ = ioutil.TempFile("", "zenkit-")
+		defer file.Close()
+		file.Write(secret)
+
+		rsaFile, _ = ioutil.TempFile("", "zenkit-")
+		defer rsaFile.Close()
+		rsaFile.Write(rsaPublicKey)
+	})
+
 	AfterEach(func() {
 		os.Remove(file.Name())
+		os.Remove(rsaFile.Name())
 		file = nil
+		rsaFile = nil
 		token = nil
 		ident = nil
 	})
@@ -165,6 +194,60 @@ var _ = Describe("Auth utilities", func() {
 				key, err := ReadKeyFromFS(logger, file.Name())
 				Ω(err).Should(BeNil())
 				Ω(key).Should(Equal(secret))
+			})
+		})
+	})
+
+	Context("when getting multiple keys from the FS", func() {
+		logger := &errorLogger{}
+		Context("when one of the keys cannot be read", func() {
+			It("should return an error", func() {
+				_, err := GetKeysFromFS(logger, []string{"/not/here"})
+				Ω(err).Should(HaveOccurred())
+			})
+		})
+		Context("when the keys can be read", func() {
+			It("should return some keys", func() {
+				keys, err := GetKeysFromFS(logger, []string{file.Name(), rsaFile.Name()})
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(keys).Should(HaveLen(2))
+			})
+		})
+	})
+
+	Context("when trying to convert bytes to a key", func() {
+		Context("with a public rsa key", func() {
+			rsaKey := []byte(
+				`-----BEGIN CERTIFICATE-----
+MIIC+zCCAeOgAwIBAgIJVuc8LVr4E501MA0GCSqGSIb3DQEBCwUAMBsxGTAXBgNV
+BAMTEGptYXRvcy5hdXRoMC5jb20wHhcNMTcwNzE2MTcwNzEwWhcNMzEwMzI1MTcw
+NzEwWjAbMRkwFwYDVQQDExBqbWF0b3MuYXV0aDAuY29tMIIBIjANBgkqhkiG9w0B
+AQEFAAOCAQ8AMIIBCgKCAQEA9v9VOd3ZgbtUnvaNTRvrkMbq+bkrH5dVr/tfKSD6
+FSEfCKIo9Mr0hh3maXzXdKvrx+qHuISr+yivqTkOtQUaEsWPK8v2tp+qsqnPCXsi
+1kB4LOkq6MIzcCZ5d3b8/Z8wHRpuDWYlhvRLpyMmHzxCyX6KAERiDsxSmyRllY+O
+//4Z0ieA8F9ixVtLEKcPimLMk4eX3Xv7eVIe6WgMcDe56JQEFCHGdIBL7h5zARKl
+JdCinivfYmUcUfKnJ5b+lYvqr5zMP4XxZ0wzz073Yy0QsNkuJzWjtBcTwVFrkyzG
+Dmdq0AUYcSAE3Ez5cLqEBbbfOTdzAyjzWRpNmEG3uwiCGwIDAQABo0IwQDAPBgNV
+HRMBAf8EBTADAQH/MB0GA1UdDgQWBBRBp5DJ126Mi8ZdAIM8FQ4Z+woJyTAOBgNV
+HQ8BAf8EBAMCAoQwDQYJKoZIhvcNAQELBQADggEBALZlvTtIW4MzZV84Bp+lZ91J
+FsaduYohBjeTxuIz38uWHFYPTpJoKHwMS9yaCm4psOt3nQN8ipil2OblUHb4Pi9X
+F+b5j4TfxD9Uc6vOnzVYk1GnLFny/Sl41QDUqg78cNE81Li47pw/RfWjSkdXDa1q
+PZ7f7nhaGd0pr6KF1z/GJUA2IpgsZ/pzJmAO3BZMAFfzp3u2kpBRry+BUXf5xg+3
+xhcmeuiFwygRmLe2q0SQ1n6ekrw+RcIHfsWxqq6A028/N8GqGdbcJ5qL5ITEKJZT
+BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
+-----END CERTIFICATE-----`,
+			)
+			It("should return an RSA key in a jwt.Key", func() {
+				var pubKeyType *rsa.PublicKey
+				key := ConvertToKey(rsaKey)
+				Ω(key).Should(BeAssignableToTypeOf(pubKeyType))
+			})
+		})
+		Context("with a secret", func() {
+			It("should return some bytes", func() {
+				var bytes []byte
+				key := ConvertToKey(secret)
+				Ω(key).Should(BeAssignableToTypeOf(bytes))
 			})
 		})
 	})
