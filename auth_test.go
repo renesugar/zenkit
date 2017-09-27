@@ -217,29 +217,9 @@ BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 
 	Context("when trying to convert bytes to a key", func() {
 		Context("with a public rsa key", func() {
-			rsaKey := []byte(
-				`-----BEGIN CERTIFICATE-----
-MIIC+zCCAeOgAwIBAgIJVuc8LVr4E501MA0GCSqGSIb3DQEBCwUAMBsxGTAXBgNV
-BAMTEGptYXRvcy5hdXRoMC5jb20wHhcNMTcwNzE2MTcwNzEwWhcNMzEwMzI1MTcw
-NzEwWjAbMRkwFwYDVQQDExBqbWF0b3MuYXV0aDAuY29tMIIBIjANBgkqhkiG9w0B
-AQEFAAOCAQ8AMIIBCgKCAQEA9v9VOd3ZgbtUnvaNTRvrkMbq+bkrH5dVr/tfKSD6
-FSEfCKIo9Mr0hh3maXzXdKvrx+qHuISr+yivqTkOtQUaEsWPK8v2tp+qsqnPCXsi
-1kB4LOkq6MIzcCZ5d3b8/Z8wHRpuDWYlhvRLpyMmHzxCyX6KAERiDsxSmyRllY+O
-//4Z0ieA8F9ixVtLEKcPimLMk4eX3Xv7eVIe6WgMcDe56JQEFCHGdIBL7h5zARKl
-JdCinivfYmUcUfKnJ5b+lYvqr5zMP4XxZ0wzz073Yy0QsNkuJzWjtBcTwVFrkyzG
-Dmdq0AUYcSAE3Ez5cLqEBbbfOTdzAyjzWRpNmEG3uwiCGwIDAQABo0IwQDAPBgNV
-HRMBAf8EBTADAQH/MB0GA1UdDgQWBBRBp5DJ126Mi8ZdAIM8FQ4Z+woJyTAOBgNV
-HQ8BAf8EBAMCAoQwDQYJKoZIhvcNAQELBQADggEBALZlvTtIW4MzZV84Bp+lZ91J
-FsaduYohBjeTxuIz38uWHFYPTpJoKHwMS9yaCm4psOt3nQN8ipil2OblUHb4Pi9X
-F+b5j4TfxD9Uc6vOnzVYk1GnLFny/Sl41QDUqg78cNE81Li47pw/RfWjSkdXDa1q
-PZ7f7nhaGd0pr6KF1z/GJUA2IpgsZ/pzJmAO3BZMAFfzp3u2kpBRry+BUXf5xg+3
-xhcmeuiFwygRmLe2q0SQ1n6ekrw+RcIHfsWxqq6A028/N8GqGdbcJ5qL5ITEKJZT
-BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
------END CERTIFICATE-----`,
-			)
 			It("should return an RSA key in a jwt.Key", func() {
 				var pubKeyType *rsa.PublicKey
-				key := ConvertToKey(rsaKey)
+				key := ConvertToKey(rsaPublicKey)
 				Ω(key).Should(BeAssignableToTypeOf(pubKeyType))
 			})
 		})
