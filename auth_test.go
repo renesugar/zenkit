@@ -337,28 +337,6 @@ BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 		})
 	})
 
-	Context("with NewJWTMiddleware", func() {
-		Context("when the KeyFunc fails", func() {
-			keysFunc := func() ([]jwt.Key, error) {
-				return []jwt.Key{}, errors.New("bad bad")
-			}
-			It("should fail to create middleware", func() {
-				_, err := NewJWTMiddleware(keysFunc, nil, security)
-				Ω(err).Should(HaveOccurred())
-			})
-		})
-		Context("when the KeyFunc succeeds", func() {
-			keysFunc := func() ([]jwt.Key, error) {
-				return []jwt.Key{secret}, nil
-			}
-			It("should create middleware", func() {
-				mw, err := NewJWTMiddleware(keysFunc, nil, security)
-				Ω(err).Should(BeNil())
-				Ω(mw).Should(Not(BeNil()))
-			})
-		})
-	})
-
 	Context("JWT middleware factory", func() {
 
 		It("should fail to create middleware when the file passed does not exist", func() {
