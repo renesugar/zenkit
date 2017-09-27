@@ -159,6 +159,30 @@ func ContextIdentity(ctx context.Context) Identity {
 	return nil
 }
 
+// GetKeysFromFS creates a slice of jwt.Key from keys in files
+func GetKeysFromFS(logger ErrorLogger, files []string) ([]jwt.Key, error) {
+	var parsedKeys []jwt.Key
+	for _, keyFile := range files {
+		keyBytes, err := ReadKeyFromFS(logger, keyFile)
+		if err != nil {
+			return []jwt.Key{}, errors.Wrap(err, "Unable to read key file from fs")
+		}
+		key := ConvertToKey(keyBytes)
+		parsedKeys = append(parsedKeys, key)
+	}
+	return parsedKeys, nil
+}
+
+// ConvertToKey converts a byte slice to a jwt.Key
+func ConvertToKey(key []byte) jwt.Key {
+	pubkey, err := jwtgo.ParseRSAPublicKeyFromPEM(key)
+	if err == nil {
+		return pubkey
+	}
+
+	return key
+}
+
 func ReadKeyFromFS(logger ErrorLogger, filename string) ([]byte, error) {
 	// Get the secret key
 	var key []byte
