@@ -3,21 +3,37 @@ package zenkit
 import (
 	"github.com/goadesign/goa"
 	"github.com/goadesign/goa/middleware"
+	"github.com/zenoss/zenkit/admin"
+	"github.com/zenoss/zenkit/admin/app"
+	"github.com/zenoss/zenkit/auth"
+	"github.com/zenoss/zenkit/logging"
+	"github.com/zenoss/zenkit/metrics"
 )
 
 func NewService(name string, authDisabled bool) *goa.Service {
 
 	svc := goa.New(name)
-	svc.WithLogger(ServiceLogger())
+	svc.WithLogger(logging.ServiceLogger())
 
 	if authDisabled {
-		svc.Use(DevModeMiddleware)
+		svc.Use(auth.DevModeMiddleware)
 	}
 	svc.Use(middleware.RequestID())
 	svc.Use(middleware.LogRequest(false))
-	svc.Use(MetricsMiddleware())
+	svc.Use(metrics.MetricsMiddleware())
 	svc.Use(middleware.ErrorHandler(svc, true))
 	svc.Use(middleware.Recover())
+
+	return svc
+}
+
+func NewAdminService(parent *goa.Service) *goa.Service {
+
+	svc := goa.New("admin")
+	svc.Context = admin.WithParentService(svc.Context, parent)
+
+	c := admin.NewAdminController(svc)
+	app.MountAdminController(svc, c)
 
 	return svc
 }

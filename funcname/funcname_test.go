@@ -1,9 +1,9 @@
-package zenkit_test
+package funcname_test
 
 import (
 	"math/rand"
 
-	. "github.com/zenoss/zenkit"
+	. "github.com/zenoss/zenkit/funcname"
 	"github.com/zenoss/zenkit/test"
 
 	. "github.com/onsi/ginkgo"

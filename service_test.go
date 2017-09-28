@@ -14,6 +14,9 @@ import (
 	"github.com/goadesign/goa/goatest"
 	"github.com/goadesign/goa/middleware"
 	. "github.com/zenoss/zenkit"
+	"github.com/zenoss/zenkit/admin"
+	"github.com/zenoss/zenkit/auth"
+	"github.com/zenoss/zenkit/metrics"
 	"github.com/zenoss/zenkit/test"
 
 	. "github.com/onsi/ginkgo"
@@ -69,7 +72,7 @@ var _ = Describe("Service", func() {
 
 		It("should inject an authenticated user", func() {
 			RunHandler(func(ctx context.Context, rw http.ResponseWriter, req *http.Request) {
-				Ω(req.Header.Get(AuthorizationHeader)).ShouldNot(BeEmpty())
+				Ω(req.Header.Get(auth.AuthorizationHeader)).ShouldNot(BeEmpty())
 			})
 		})
 
@@ -81,7 +84,7 @@ var _ = Describe("Service", func() {
 
 	It("should not have a user injected", func() {
 		RunHandler(func(ctx context.Context, rw http.ResponseWriter, req *http.Request) {
-			Ω(req.Header.Get(AuthorizationHeader)).Should(BeEmpty())
+			Ω(req.Header.Get(auth.AuthorizationHeader)).Should(BeEmpty())
 		})
 	})
 
@@ -103,7 +106,7 @@ var _ = Describe("Service", func() {
 
 	It("should register a metric registry", func() {
 		RunHandler(func(ctx context.Context, rw http.ResponseWriter, req *http.Request) {
-			Ω(ContextMetrics(ctx)).ShouldNot(BeNil())
+			Ω(metrics.ContextMetrics(ctx)).ShouldNot(BeNil())
 		})
 	})
 
@@ -125,5 +128,12 @@ var _ = Describe("Service", func() {
 		ctrl.MuxHandler("test", handler, nil)(rw, req, url.Values{})
 		Eventually(logBuf).Should(gbytes.Say(fmt.Sprintf("err=%s", errstr)))
 		Eventually(rw.Code).Should(Equal(500))
+	})
+
+	It("should initialize an admin service", func() {
+		adminSvc := NewAdminService(svc)
+		Ω(adminSvc).ShouldNot(BeNil())
+		Ω(adminSvc.Name).Should(Equal("admin"))
+		Ω(admin.ContextParentService(adminSvc.Context)).Should(Equal(svc))
 	})
 })

@@ -1,4 +1,4 @@
-package zenkit_test
+package logging_test
 
 import (
 	"bytes"
@@ -7,7 +7,7 @@ import (
 
 	"github.com/goadesign/goa"
 	"github.com/sirupsen/logrus"
-	. "github.com/zenoss/zenkit"
+	. "github.com/zenoss/zenkit/logging"
 	"github.com/zenoss/zenkit/test"
 
 	. "github.com/onsi/ginkgo"

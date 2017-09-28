@@ -1,4 +1,4 @@
-package zenkit
+package funcname
 
 import (
 	"regexp"

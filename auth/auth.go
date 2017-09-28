@@ -1,8 +1,7 @@
-package zenkit
+package auth
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -17,6 +16,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"github.com/zenoss/zenkit/claims"
+	"github.com/zenoss/zenkit/logging"
 )
 
 type JWTValidator func(ctx context.Context) error
@@ -59,15 +59,6 @@ func JWT() *design.SecuritySchemeDefinition {
 	return localJWT
 }
 
-func JWTMiddleware(logger ErrorLogger, filename string, validator goa.Middleware, security *goa.JWTSecurity) (goa.Middleware, error) {
-	key, err := ReadKeyFromFS(logger, filename)
-	if err != nil {
-		return nil, errors.Wrap(err, "couldn't read key from filesystem")
-	}
-	resolver := jwt.NewSimpleResolver([]jwt.Key{key})
-	return jwt.New(resolver, validator, security), nil
-}
-
 func JWTValidatorFunc(m JWTValidator) goa.Middleware {
 	return func(h goa.Handler) goa.Handler {
 		return func(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
@@ -85,20 +76,6 @@ func JWTValidatorFunc(m JWTValidator) goa.Middleware {
 			}
 			return h(ctx, rw, req)
 		}
-	}
-}
-
-func DevModeMiddleware(h goa.Handler) goa.Handler {
-	return func(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
-		header := req.Header.Get("Authorization")
-		if header == "" {
-			if len(devJWT) == 0 {
-				signedToken := BuildDevToken(ctx, jwtgo.SigningMethodHS256)
-				devJWT = fmt.Sprintf("Bearer %s", signedToken)
-			}
-			req.Header.Set("Authorization", devJWT)
-		}
-		return h(ctx, rw, req)
 	}
 }
 
@@ -148,19 +125,8 @@ func (t *tokenIdentity) Tenant() string {
 	return aud[0]
 }
 
-func WithIdentity(ctx context.Context, identity Identity) context.Context {
-	return context.WithValue(ctx, identityKey, identity)
-}
-
-func ContextIdentity(ctx context.Context) Identity {
-	if v := ctx.Value(identityKey); v != nil {
-		return v.(Identity)
-	}
-	return nil
-}
-
 // GetKeysFromFS creates a slice of jwt.Key from keys in files
-func GetKeysFromFS(logger ErrorLogger, files []string) ([]jwt.Key, error) {
+func GetKeysFromFS(logger logging.ErrorLogger, files []string) ([]jwt.Key, error) {
 	var parsedKeys []jwt.Key
 	for _, keyFile := range files {
 		keyBytes, err := ReadKeyFromFS(logger, keyFile)
@@ -183,7 +149,7 @@ func ConvertToKey(key []byte) jwt.Key {
 	return key
 }
 
-func ReadKeyFromFS(logger ErrorLogger, filename string) ([]byte, error) {
+func ReadKeyFromFS(logger logging.ErrorLogger, filename string) ([]byte, error) {
 	// Get the secret key
 	var key []byte
 	readKey := func() error {

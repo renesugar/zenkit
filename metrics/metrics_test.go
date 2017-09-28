@@ -1,4 +1,4 @@
-package zenkit_test
+package metrics_test
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"time"
 
 	metrics "github.com/rcrowley/go-metrics"
-	. "github.com/zenoss/zenkit"
+	. "github.com/zenoss/zenkit/metrics"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
