@@ -1,9 +1,9 @@
-package zenkit_test
+package metrics_test
 
 import (
 	"time"
 
-	. "github.com/zenoss/zenkit"
+	. "github.com/zenoss/zenkit/metrics"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

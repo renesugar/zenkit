@@ -7,7 +7,7 @@ import (
 	schemaregistry "github.com/datamountaineer/schema-registry"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"github.com/zenoss/zenkit"
+	"github.com/zenoss/zenkit/logging"
 )
 
 // key is the type used to store internal values in the context.
@@ -76,7 +76,7 @@ type NewSchemaRegistryClientFunc func(baseurl string) (schemaregistry.Client, er
 func BuildSchemaRegistryFactory(ctx context.Context, newClientFunc NewSchemaRegistryClientFunc) SchemaRegistryFactory {
 	return &defaultRegistryFactory{
 		newClientFunc: newClientFunc,
-		logger:        zenkit.ContextLogger(ctx).Logger,
+		logger:        logging.ContextLogger(ctx).Logger,
 	}
 }
 
@@ -112,8 +112,8 @@ func (r *defaultRegistry) Register(KeySubject string, KeySchema string, ValueSub
 func (r *defaultRegistry) register(client schemaregistry.Client, subject, schema string) error {
 	logger := r.logger.WithFields(logrus.Fields{
 		"registry": r.registryURI,
-		"subject": subject,
-		"schema": schema,
+		"subject":  subject,
+		"schema":   schema,
 	})
 
 	registered, _, err := client.IsRegistered(subject, schema)

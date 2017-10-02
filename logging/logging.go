@@ -1,4 +1,4 @@
-package zenkit
+package logging
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"github.com/goadesign/goa"
 	goalogrus "github.com/goadesign/goa/logging/logrus"
 	"github.com/sirupsen/logrus"
+	"github.com/zenoss/zenkit/funcname"
 )
 
 var noop = func() {}
@@ -51,7 +52,7 @@ func LogEntryAndExit(ctx context.Context) func() {
 	if logger == nil {
 		return noop
 	}
-	fn := FuncName(2)
+	fn := funcname.FuncName(2)
 	logger.Debugf("ENTER %s()", fn)
 	exit := func() {
 		logger.Debugf("EXIT %s()", fn)

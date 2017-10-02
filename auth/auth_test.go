@@ -1,4 +1,4 @@
-package zenkit_test
+package auth_test
 
 import (
 	"context"
@@ -18,8 +18,9 @@ import (
 	"github.com/goadesign/goa/dslengine"
 	"github.com/goadesign/goa/middleware/security/jwt"
 	"github.com/pkg/errors"
-	. "github.com/zenoss/zenkit"
+	. "github.com/zenoss/zenkit/auth"
 	"github.com/zenoss/zenkit/claims"
+	"github.com/zenoss/zenkit/logging"
 	"github.com/zenoss/zenkit/test"
 
 	. "github.com/onsi/ginkgo"
@@ -130,7 +131,7 @@ BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 
 	BeforeEach(func() {
 		svc = goa.New(test.RandString(8))
-		svc.WithLogger(ServiceLogger())
+		svc.WithLogger(logging.ServiceLogger())
 		req, _ = http.NewRequest("", "http://example.com/", nil)
 		resp = httptest.NewRecorder()
 		audience = []string{"tenant"}

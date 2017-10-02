@@ -1,4 +1,4 @@
-package zenkit
+package metrics
 
 import (
 	"context"
@@ -7,6 +7,13 @@ import (
 
 	"github.com/goadesign/goa"
 	metrics "github.com/rcrowley/go-metrics"
+	"github.com/zenoss/zenkit/funcname"
+)
+
+type key int
+
+const (
+	metricsKey key = iota + 1
 )
 
 func WithMetrics(ctx context.Context, registry metrics.Registry) context.Context {
@@ -22,7 +29,7 @@ func ContextMetrics(ctx context.Context) metrics.Registry {
 
 func MeasureTime(ctx context.Context) func() {
 	begin := TimeFunc()
-	fn := FuncName(2)
+	fn := funcname.FuncName(2)
 	registry := ContextMetrics(ctx)
 	exit := func() {
 		if registry == nil {
