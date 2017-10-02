@@ -18,9 +18,10 @@ import (
 var _ = Describe("Config", func() {
 
 	var (
-		prefix string
-		cmd    *cobra.Command
-		port   int
+		prefix    string
+		cmd       *cobra.Command
+		port      int
+		adminPort int
 	)
 
 	setenv := func(s, v string) {
@@ -70,6 +71,25 @@ var _ = Describe("Config", func() {
 			err := cmd.ParseFlags([]string{"--http-port", fmt.Sprintf("%d", port2)})
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(viper.GetInt(HTTPPortConfig)).Should(BeNumerically("==", port2))
+		})
+	}
+
+	TestAdminFlags := func() {
+		It("should have a default port based on what's passed in", func() {
+			Ω(viper.GetInt(AdminPortConfig)).Should(BeNumerically("==", port))
+		})
+
+		It("should allow setting the port via env var", func() {
+			port2 := port - 1
+			setenv("ADMIN_PORT", fmt.Sprintf("%d", port2))
+			Ω(viper.GetInt(AdminPortConfig)).Should(BeNumerically("==", port2))
+		})
+
+		It("should allow setting the port via command line", func() {
+			port2 := port - 1
+			err := cmd.ParseFlags([]string{"--admin-port", fmt.Sprintf("%d", port2)})
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(viper.GetInt(AdminPortConfig)).Should(BeNumerically("==", port2))
 		})
 	}
 
@@ -188,6 +208,17 @@ var _ = Describe("Config", func() {
 
 	})
 
+	Context("with Admin flags", func() {
+
+		BeforeEach(func() {
+			port = rand.Intn(65535)
+			AddAdminOptions(cmd, port)
+		})
+
+		TestAdminFlags()
+
+	})
+
 	Context("with logging flags", func() {
 
 		BeforeEach(func() {
@@ -201,8 +232,10 @@ var _ = Describe("Config", func() {
 	Context("with standard server flags", func() {
 
 		BeforeEach(func() {
-			port = rand.Intn(65535)
-			AddStandardServerOptions(cmd, port)
+			p := rand.Perm(65535)
+			port = p[0]
+			adminPort = p[1]
+			AddStandardServerOptions(cmd, port, adminPort)
 		})
 
 		TestHTTPFlags()
