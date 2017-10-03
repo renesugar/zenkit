@@ -17,11 +17,13 @@ const (
 	AuthDisabledConfig = "auth.disabled"
 	AuthKeyFileConfig  = "auth.key_file"
 
-	HTTPPortConfig = "http.port"
+	HTTPPortConfig  = "http.port"
+	AdminPortConfig = "admin.port"
 )
 
-func AddStandardServerOptions(cmd *cobra.Command, port int) {
+func AddStandardServerOptions(cmd *cobra.Command, port, adminPort int) {
 	AddHTTPOptions(cmd, port)
+	AddAdminOptions(cmd, adminPort)
 	AddAuthConfigOptions(cmd)
 	AddTracingConfigOptions(cmd)
 }
@@ -60,4 +62,10 @@ func AddHTTPOptions(cmd *cobra.Command, port int) {
 	cmd.PersistentFlags().IntP("http-port", "p", port, "Port to which the server should bind")
 	viper.BindPFlag(HTTPPortConfig, cmd.PersistentFlags().Lookup("http-port"))
 	viper.SetDefault(HTTPPortConfig, fmt.Sprintf("%d", port))
+}
+
+func AddAdminOptions(cmd *cobra.Command, adminPort int) {
+	cmd.PersistentFlags().Int("admin-port", adminPort, "Port to which the admin server should bind")
+	viper.BindPFlag(AdminPortConfig, cmd.PersistentFlags().Lookup("admin-port"))
+	viper.SetDefault(AdminPortConfig, fmt.Sprintf("%d", adminPort))
 }
