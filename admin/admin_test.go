@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 
-	"github.com/control-center/serviced/health"
 	healthcheck "github.com/docker/go-healthcheck"
 	"github.com/goadesign/goa"
 	gometrics "github.com/rcrowley/go-metrics"
@@ -16,15 +15,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	//. "github.com/onsi/gomega"
 )
-
-type mockStatusChecker struct {
-	status health.Status
-	err    error
-}
-
-func (sc *mockStatusChecker) CheckStatus() (health.Status, error) {
-	return sc.status, sc.err
-}
 
 // We need a registry that refuses to Marshal
 type Registry struct {
