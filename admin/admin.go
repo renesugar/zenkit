@@ -3,10 +3,10 @@ package admin
 import (
 	"encoding/json"
 	"fmt"
+	healthcheck "github.com/docker/go-healthcheck"
 	"github.com/goadesign/goa"
 	"github.com/zenoss/zenkit/admin/app"
 	"github.com/zenoss/zenkit/admin/swagger"
-	"github.com/zenoss/zenkit/health"
 )
 
 // AdminController implements the admin resource.
@@ -23,20 +23,14 @@ func NewAdminController(service *goa.Service) *AdminController {
 func (c *AdminController) Health(ctx *app.HealthAdminContext) error {
 	// AdminController_Health: start_implement
 
-	output := health.Execute()
-	results := make([]*app.XAdminHealth, len(output))
-	for i, o := range output {
-		results[i] = &app.XAdminHealth{Name: o.Name, Status: string(o.Status)}
-		if o.Err != nil {
-			details := o.Err.Error()
-			results[i].Details = &details
-		}
+	output := healthcheck.CheckStatus()
+	if len(output) > 0 {
+		return ctx.ServiceUnavailable(output)
 	}
-	return ctx.OK(results)
+	return ctx.OK([]byte{})
 
 	// AdminController_Health: end_implement
-	res := app.XAdminHealthCollection{}
-	return ctx.OK(res)
+	return nil
 }
 
 // Metrics runs the metrics action.

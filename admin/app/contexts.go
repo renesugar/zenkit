@@ -37,12 +37,17 @@ func NewHealthAdminContext(ctx context.Context, r *http.Request, service *goa.Se
 }
 
 // OK sends a HTTP response with status code 200.
-func (ctx *HealthAdminContext) OK(r XAdminHealthCollection) error {
-	ctx.ResponseData.Header().Set("Content-Type", "application/x.admin.health+json; type=collection")
-	if r == nil {
-		r = XAdminHealthCollection{}
-	}
-	return ctx.ResponseData.Service.Send(ctx.Context, 200, r)
+func (ctx *HealthAdminContext) OK(resp []byte) error {
+	ctx.ResponseData.Header().Set("Content-Type", "text/plain")
+	ctx.ResponseData.WriteHeader(200)
+	_, err := ctx.ResponseData.Write(resp)
+	return err
+}
+
+// ServiceUnavailable sends a HTTP response with status code 503.
+func (ctx *HealthAdminContext) ServiceUnavailable(r map[string]string) error {
+	ctx.ResponseData.Header().Set("Content-Type", "")
+	return ctx.ResponseData.Service.Send(ctx.Context, 503, r)
 }
 
 // MetricsAdminContext provides the admin metrics action context.

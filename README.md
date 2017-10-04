@@ -136,6 +136,7 @@ installed them, so you can keep running `make test`.
   scaffolding code and boilerplate, then adding business logic.
 * [go-metrics](https://github.com/rcrowley/go-metrics) for metrics.
 * [Logrus](https://github.com/sirupsen/logrus) for structured logging.
+* [go-healthcheck](https://github.com/docker/go-healthcheck) for healthchecks.
 * [Ginkgo](https://onsi.github.io/ginkgo/) and
   [Gomega](https://onsi.github.io/gomega) for testing.
 * [Dredd](http://dredd.readthedocs.io/en/latest/) for api tests.

@@ -37,28 +37,7 @@ var _ = Resource("admin", func() {
 	Action("health", func() {
 		Description("Report the health of the service")
 		Routing(GET("/health"))
-		Response(OK, CollectionOf(Health))
-	})
-})
-
-var Health = MediaType("application/x.admin.health+json", func() {
-	Description("Health result for service")
-	Attributes(func() {
-		Attribute("name", String, "Health check name", func() {
-			Example("app")
-		})
-		Attribute("status", String, "Health check status", func() {
-			Example("CRITICAL")
-		})
-		Attribute("details", String, "Details about the service health", func() {
-			Example("expected 'PONG' got '500'")
-		})
-		Required("name", "status")
-	})
-
-	View("default", func() {
-		Attribute("name")
-		Attribute("status")
-		Attribute("details")
+		Response(OK)
+		Response(ServiceUnavailable, HashOf(String, String))
 	})
 })

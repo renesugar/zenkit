@@ -1,42 +1,6 @@
 consumes:
 - application/json
 definitions:
-  XAdminHealth:
-    description: Health result for service (default view)
-    example:
-      details: expected 'PONG' got '500'
-      name: app
-      status: CRITICAL
-    properties:
-      details:
-        description: Details about the service health
-        example: expected 'PONG' got '500'
-        type: string
-      name:
-        description: Health check name
-        example: app
-        type: string
-      status:
-        description: Health check status
-        example: CRITICAL
-        type: string
-    required:
-    - name
-    - status
-    title: 'Mediatype identifier: application/x.admin.health+json; view=default'
-    type: object
-  XAdminHealthCollection:
-    description: XAdminHealthCollection is the media type for an array of XAdminHealth
-      (default view)
-    example:
-    - details: expected 'PONG' got '500'
-      name: app
-      status: CRITICAL
-    items:
-      $ref: '#/definitions/XAdminHealth'
-    title: 'Mediatype identifier: application/x.admin.health+json; type=collection;
-      view=default'
-    type: array
   error:
     description: Error response media type (default view)
     example:
@@ -84,12 +48,12 @@ paths:
       description: Report the health of the service
       operationId: admin#health
       produces:
-      - application/x.admin.health+json; type=collection
+      - text/plain
       responses:
         "200":
           description: OK
-          schema:
-            $ref: '#/definitions/XAdminHealthCollection'
+        "503":
+          description: Service Unavailable
       schemes:
       - http
       summary: health admin
