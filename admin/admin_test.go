@@ -9,11 +9,21 @@ import (
 	"github.com/zenoss/zenkit"
 	. "github.com/zenoss/zenkit/admin"
 	"github.com/zenoss/zenkit/admin/app/test"
+	"github.com/zenoss/zenkit/health"
 	"github.com/zenoss/zenkit/metrics"
 
 	. "github.com/onsi/ginkgo"
-	//. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega"
 )
+
+type mockStatusChecker struct {
+	status health.Status
+	err    error
+}
+
+func (sc *mockStatusChecker) CheckStatus() (health.Status, error) {
+	return sc.status, sc.err
+}
 
 // We need a registry that refuses to Marshal
 type Registry struct {
@@ -101,6 +111,39 @@ var _ = Describe("Admin", func() {
 			It("should respond OK", func() {
 				test.SwaggerJSONAdminOK(t, ctx, svc, ctrl)
 			})
+		})
+	})
+
+	Context("when the Health resource is requested", func() {
+
+		AfterEach(func() {
+			health.Reset()
+		})
+
+		It("should return the state of the passing check", func() {
+			health.Register("testOK", &mockStatusChecker{
+				status: health.OK,
+				err:    nil,
+			})
+			_, r := test.HealthAdminOK(t, ctx, svc, ctrl)
+			Ω(r).Should(HaveLen(1))
+			Ω(r[0].Name).Should(Equal("testOK"))
+			Ω(r[0].Status).Should(Equal(string(health.OK)))
+			Ω(r[0].Details).Should(BeNil())
+		})
+
+		It("should return the state of the failing check", func() {
+			health.Register("testCRITICAL", &mockStatusChecker{
+				status: health.CRITICAL,
+				err:    errors.New("he dead"),
+			})
+
+			_, r := test.HealthAdminOK(t, ctx, svc, ctrl)
+			Ω(r).Should(HaveLen(1))
+			Ω(r[0].Name).Should(Equal("testCRITICAL"))
+			Ω(r[0].Status).Should(Equal(string(health.CRITICAL)))
+			Ω(r[0].Details).ShouldNot(BeNil())
+			Ω(*r[0].Details).Should(Equal("he dead"))
 		})
 	})
 })
