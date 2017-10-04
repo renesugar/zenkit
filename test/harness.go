@@ -29,6 +29,10 @@ var (
 	nameRegexp = regexp.MustCompile("[^a-z0-9]+")
 	// ErrNoContainerFound is raised when we don't find any containers using the filters specified
 	ErrNoContainerFound = errors.New("no containers found")
+	// ErrNoConfigFound is returned when no config for a specified service
+	ErrNoConfigFound = errors.New("no config found")
+	// ErrNotInEnv is returned when no variable exists in an environment for the given key
+	ErrNotInEnv = errors.New("variable is not in environment")
 )
 
 type Harness interface {
@@ -36,6 +40,7 @@ type Harness interface {
 	Stop() error
 	Wait(healthcheck func() error, timeout time.Duration) error
 	Resolve(service string, port uint64) (string, error)
+	GetFromEnv(service, key string) (string, error)
 }
 
 type dockerComposeHarness struct {
@@ -116,7 +121,7 @@ func (h *dockerComposeHarness) Start() error {
 	}
 
 	if err := h.project.Up(h.ctx, options.Up{}); err != nil {
-    return errors.Wrap(err, "unable to bring up the libcompose project")
+		return errors.Wrap(err, "unable to bring up the libcompose project")
 	}
 
 	return nil
@@ -166,4 +171,20 @@ func (h *dockerComposeHarness) Wait(healthcheck func() error, timeout time.Durat
 		return errors.Wrap(err, "health check didn't pass within the timeout")
 	}
 	return nil
+}
+
+func (h *dockerComposeHarness) GetFromEnv(service, key string) (string, error) {
+	cfg, found := h.project.GetServiceConfig(service)
+	if !found {
+		return "", ErrNoConfigFound
+	}
+	for _, envVar := range cfg.Environment {
+		split := strings.Split(envVar, "=")
+		if len(split) == 2 {
+			if split[0] == key {
+				return split[1], nil
+			}
+		}
+	}
+	return "", ErrNotInEnv
 }
