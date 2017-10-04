@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	healthcheck "github.com/docker/go-healthcheck"
 	"github.com/goadesign/goa"
 	gometrics "github.com/rcrowley/go-metrics"
 	"github.com/zenoss/zenkit"
@@ -101,6 +102,25 @@ var _ = Describe("Admin", func() {
 			It("should respond OK", func() {
 				test.SwaggerJSONAdminOK(t, ctx, svc, ctrl)
 			})
+		})
+	})
+
+	Context("when the Health resource is requested", func() {
+
+		AfterEach(func() {
+			healthcheck.DefaultRegistry = healthcheck.NewRegistry()
+		})
+
+		It("should return OK if there are no failing health checks", func() {
+			check := func() error { return nil }
+			healthcheck.RegisterFunc("testOK", check)
+			test.HealthAdminOK(t, ctx, svc, ctrl)
+		})
+
+		It("should return ServiceUnavailable if there are failing health checks", func() {
+			check := func() error { return errors.New("he dead") }
+			healthcheck.RegisterFunc("testDOWN", check)
+			test.HealthAdminServiceUnavailable(t, ctx, svc, ctrl)
 		})
 	})
 })

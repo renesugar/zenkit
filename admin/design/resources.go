@@ -34,4 +34,10 @@ var _ = Resource("admin", func() {
 		Routing(GET("/swagger"))
 		Response(OK, "text/html")
 	})
+	Action("health", func() {
+		Description("Report the health of the service")
+		Routing(GET("/health"))
+		Response(OK)
+		Response(ServiceUnavailable, HashOf(String, String))
+	})
 })

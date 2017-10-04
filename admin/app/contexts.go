@@ -17,6 +17,39 @@ import (
 	"strconv"
 )
 
+// HealthAdminContext provides the admin health action context.
+type HealthAdminContext struct {
+	context.Context
+	*goa.ResponseData
+	*goa.RequestData
+}
+
+// NewHealthAdminContext parses the incoming request URL and body, performs validations and creates the
+// context used by the admin controller health action.
+func NewHealthAdminContext(ctx context.Context, r *http.Request, service *goa.Service) (*HealthAdminContext, error) {
+	var err error
+	resp := goa.ContextResponse(ctx)
+	resp.Service = service
+	req := goa.ContextRequest(ctx)
+	req.Request = r
+	rctx := HealthAdminContext{Context: ctx, ResponseData: resp, RequestData: req}
+	return &rctx, err
+}
+
+// OK sends a HTTP response with status code 200.
+func (ctx *HealthAdminContext) OK(resp []byte) error {
+	ctx.ResponseData.Header().Set("Content-Type", "text/plain")
+	ctx.ResponseData.WriteHeader(200)
+	_, err := ctx.ResponseData.Write(resp)
+	return err
+}
+
+// ServiceUnavailable sends a HTTP response with status code 503.
+func (ctx *HealthAdminContext) ServiceUnavailable(r map[string]string) error {
+	ctx.ResponseData.Header().Set("Content-Type", "")
+	return ctx.ResponseData.Service.Send(ctx.Context, 503, r)
+}
+
 // MetricsAdminContext provides the admin metrics action context.
 type MetricsAdminContext struct {
 	context.Context

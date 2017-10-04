@@ -43,6 +43,22 @@ info:
   title: Admin Service
   version: ""
 paths:
+  /health:
+    get:
+      description: Report the health of the service
+      operationId: admin#health
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+        "503":
+          description: Service Unavailable
+      schemes:
+      - http
+      summary: health admin
+      tags:
+      - admin
   /metrics:
     get:
       description: Return a snapshot of metrics

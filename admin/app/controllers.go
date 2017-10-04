@@ -30,6 +30,7 @@ func initService(service *goa.Service) {
 // AdminController is the controller interface for the Admin actions.
 type AdminController interface {
 	goa.Muxer
+	Health(*HealthAdminContext) error
 	Metrics(*MetricsAdminContext) error
 	Ping(*PingAdminContext) error
 	Swagger(*SwaggerAdminContext) error
@@ -40,6 +41,21 @@ type AdminController interface {
 func MountAdminController(service *goa.Service, ctrl AdminController) {
 	initService(service)
 	var h goa.Handler
+
+	h = func(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
+		// Check if there was an error loading the request
+		if err := goa.ContextError(ctx); err != nil {
+			return err
+		}
+		// Build the context
+		rctx, err := NewHealthAdminContext(ctx, req, service)
+		if err != nil {
+			return err
+		}
+		return ctrl.Health(rctx)
+	}
+	service.Mux.Handle("GET", "/health", ctrl.MuxHandler("health", h, nil))
+	service.LogInfo("mount", "ctrl", "Admin", "action", "Health", "route", "GET /health")
 
 	h = func(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
 		// Check if there was an error loading the request

@@ -67,3 +67,5 @@ import:
   subpackages:
   - gbytes
   - ghttp
+- package: github.com/docker/go-healthcheck
+  version: d8a60e9c8b84e16693ebc357328c6df85eb616c2
