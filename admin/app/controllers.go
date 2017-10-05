@@ -144,6 +144,8 @@ func MountHealthController(service *goa.Service, ctrl HealthController) {
 		}
 		return ctrl.Health(rctx)
 	}
+	service.Mux.Handle("HEAD", "/health/", ctrl.MuxHandler("health", h, nil))
+	service.LogInfo("mount", "ctrl", "Health", "action", "Health", "route", "HEAD /health/")
 	service.Mux.Handle("GET", "/health/", ctrl.MuxHandler("health", h, nil))
 	service.LogInfo("mount", "ctrl", "Health", "action", "Health", "route", "GET /health/")
 

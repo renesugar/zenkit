@@ -40,7 +40,7 @@ var _ = Resource("health", func() {
 	BasePath("/health")
 	Action("health", func() {
 		Description("Report the health of the service")
-		Routing(GET("/"))
+		Routing(HEAD("/"), GET("/"))
 		Response(OK)
 		Response(ServiceUnavailable, HashOf(String, String))
 	})
