@@ -43,7 +43,7 @@ info:
   title: Admin Service
   version: ""
 paths:
-  /health/:
+  /health:
     get:
       description: Report the health of the service
       operationId: health#health#1

@@ -105,7 +105,7 @@ func HealthHealthOK(t goatest.TInterface, ctx context.Context, service *goa.Serv
 	// Setup request context
 	rw := httptest.NewRecorder()
 	u := &url.URL{
-		Path: fmt.Sprintf("/health/"),
+		Path: fmt.Sprintf("/health"),
 	}
 	req, err := http.NewRequest("HEAD", u.String(), nil)
 	if err != nil {
@@ -161,7 +161,7 @@ func HealthHealthOK1(t goatest.TInterface, ctx context.Context, service *goa.Ser
 	// Setup request context
 	rw := httptest.NewRecorder()
 	u := &url.URL{
-		Path: fmt.Sprintf("/health/"),
+		Path: fmt.Sprintf("/health"),
 	}
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
@@ -217,7 +217,7 @@ func HealthHealthServiceUnavailable(t goatest.TInterface, ctx context.Context, s
 	// Setup request context
 	rw := httptest.NewRecorder()
 	u := &url.URL{
-		Path: fmt.Sprintf("/health/"),
+		Path: fmt.Sprintf("/health"),
 	}
 	req, err := http.NewRequest("HEAD", u.String(), nil)
 	if err != nil {
@@ -273,7 +273,7 @@ func HealthHealthServiceUnavailable1(t goatest.TInterface, ctx context.Context, 
 	// Setup request context
 	rw := httptest.NewRecorder()
 	u := &url.URL{
-		Path: fmt.Sprintf("/health/"),
+		Path: fmt.Sprintf("/health"),
 	}
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
