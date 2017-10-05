@@ -46,6 +46,21 @@ paths:
   /health/:
     get:
       description: Report the health of the service
+      operationId: health#health#1
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+        "503":
+          description: Service Unavailable
+      schemes:
+      - http
+      summary: health health
+      tags:
+      - health
+    head:
+      description: Report the health of the service
       operationId: health#health
       produces:
       - text/plain
