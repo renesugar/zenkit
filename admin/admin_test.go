@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 
-	healthcheck "github.com/docker/go-healthcheck"
 	"github.com/goadesign/goa"
 	gometrics "github.com/rcrowley/go-metrics"
 	"github.com/zenoss/zenkit"
 	. "github.com/zenoss/zenkit/admin"
 	"github.com/zenoss/zenkit/admin/app/test"
+	"github.com/zenoss/zenkit/healthcheck"
 	"github.com/zenoss/zenkit/metrics"
 
 	. "github.com/onsi/ginkgo"

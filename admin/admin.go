@@ -3,10 +3,11 @@ package admin
 import (
 	"encoding/json"
 	"fmt"
-	healthcheck "github.com/docker/go-healthcheck"
+
 	"github.com/goadesign/goa"
 	"github.com/zenoss/zenkit/admin/app"
 	"github.com/zenoss/zenkit/admin/swagger"
+	"github.com/zenoss/zenkit/healthcheck"
 )
 
 // AdminController implements the admin resource.
