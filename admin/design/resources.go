@@ -34,10 +34,24 @@ var _ = Resource("admin", func() {
 		Routing(GET("/swagger"))
 		Response(OK, "text/html")
 	})
+})
+
+var _ = Resource("health", func() {
+	BasePath("/health")
 	Action("health", func() {
 		Description("Report the health of the service")
-		Routing(GET("/health"))
+		Routing(GET("/"))
 		Response(OK)
 		Response(ServiceUnavailable, HashOf(String, String))
+	})
+	Action("up", func() {
+		Description("Sets manual_http_status to return nil")
+		Routing(POST("/up"))
+		Response(OK)
+	})
+	Action("down", func() {
+		Description("Sets manual_http_status to an error")
+		Routing(POST("/down"))
+		Response(OK)
 	})
 })
