@@ -3,11 +3,9 @@ package admin
 import (
 	"encoding/json"
 	"fmt"
-
 	"github.com/goadesign/goa"
 	"github.com/zenoss/zenkit/admin/app"
 	"github.com/zenoss/zenkit/admin/swagger"
-	"github.com/zenoss/zenkit/healthcheck"
 )
 
 // AdminController implements the admin resource.
@@ -18,20 +16,6 @@ type AdminController struct {
 // NewAdminController creates a admin controller.
 func NewAdminController(service *goa.Service) *AdminController {
 	return &AdminController{Controller: service.NewController("AdminController")}
-}
-
-// Health runs the health action.
-func (c *AdminController) Health(ctx *app.HealthAdminContext) error {
-	// AdminController_Health: start_implement
-
-	output := healthcheck.CheckStatus()
-	if len(output) > 0 {
-		return ctx.ServiceUnavailable(output)
-	}
-	return ctx.OK([]byte{})
-
-	// AdminController_Health: end_implement
-	return nil
 }
 
 // Metrics runs the metrics action.

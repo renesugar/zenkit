@@ -43,10 +43,10 @@ info:
   title: Admin Service
   version: ""
 paths:
-  /health:
+  /health/:
     get:
       description: Report the health of the service
-      operationId: admin#health
+      operationId: health#health
       produces:
       - text/plain
       responses:
@@ -56,9 +56,37 @@ paths:
           description: Service Unavailable
       schemes:
       - http
-      summary: health admin
+      summary: health health
       tags:
-      - admin
+      - health
+  /health/down:
+    post:
+      description: Sets manual_http_status to an error
+      operationId: health#down
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+      schemes:
+      - http
+      summary: down health
+      tags:
+      - health
+  /health/up:
+    post:
+      description: Sets manual_http_status to return nil
+      operationId: health#up
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+      schemes:
+      - http
+      summary: up health
+      tags:
+      - health
   /metrics:
     get:
       description: Return a snapshot of metrics
@@ -71,8 +99,8 @@ paths:
         required: false
         type: boolean
       produces:
-      - application/vnd.goa.error
       - application/json
+      - application/vnd.goa.error
       responses:
         "200":
           description: OK
@@ -131,8 +159,8 @@ paths:
       description: Retrieve Swagger spec as JSON
       operationId: admin#swagger.json
       produces:
-      - application/vnd.goa.error
       - application/json
+      - application/vnd.goa.error
       responses:
         "200":
           description: OK
