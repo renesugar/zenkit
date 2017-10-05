@@ -16,6 +16,22 @@ var _ = Describe("Health", func() {
 		DefaultRegistry = NewRegistry()
 	})
 
+	Context("with a CheckFunc", func() {
+		var (
+			f   CheckFunc
+			err error
+		)
+
+		BeforeEach(func() {
+			f = func() error { return err }
+		})
+
+		It("check should return the result of err", func() {
+			err = errors.New("he dead")
+			Ω(f.Check()).Should(Equal(err))
+		})
+	})
+
 	Context("with a StatusUpdater", func() {
 		var u Updater
 
