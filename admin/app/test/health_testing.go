@@ -24,11 +24,11 @@ import (
 	"net/url"
 )
 
-// DownHealthOK runs the method Down of the given controller with the given parameters.
+// DownHealthOK runs the method Down of the given controller with the given parameters and payload.
 // It returns the response writer so it's possible to inspect the response headers.
 // If ctx is nil then context.Background() is used.
 // If service is nil then a default service is created.
-func DownHealthOK(t goatest.TInterface, ctx context.Context, service *goa.Service, ctrl app.HealthController) http.ResponseWriter {
+func DownHealthOK(t goatest.TInterface, ctx context.Context, service *goa.Service, ctrl app.HealthController, payload *app.DownHealthPayload) http.ResponseWriter {
 	// Setup service
 	var (
 		logBuf bytes.Buffer
@@ -46,31 +46,43 @@ func DownHealthOK(t goatest.TInterface, ctx context.Context, service *goa.Servic
 		service.Encoder.Register(newEncoder, "*/*")
 	}
 
+	// Validate payload
+	err := payload.Validate()
+	if err != nil {
+		e, ok := err.(goa.ServiceError)
+		if !ok {
+			panic(err) // bug
+		}
+		t.Errorf("unexpected payload validation error: %+v", e)
+		return nil
+	}
+
 	// Setup request context
 	rw := httptest.NewRecorder()
 	u := &url.URL{
 		Path: fmt.Sprintf("/health/down"),
 	}
-	req, err := http.NewRequest("POST", u.String(), nil)
-	if err != nil {
-		panic("invalid test " + err.Error()) // bug
+	req, _err := http.NewRequest("POST", u.String(), nil)
+	if _err != nil {
+		panic("invalid test " + _err.Error()) // bug
 	}
 	prms := url.Values{}
 	if ctx == nil {
 		ctx = context.Background()
 	}
 	goaCtx := goa.NewContext(goa.WithAction(ctx, "HealthTest"), rw, req, prms)
-	downCtx, _err := app.NewDownHealthContext(goaCtx, req, service)
-	if _err != nil {
-		panic("invalid test data " + _err.Error()) // bug
+	downCtx, __err := app.NewDownHealthContext(goaCtx, req, service)
+	if __err != nil {
+		panic("invalid test data " + __err.Error()) // bug
 	}
+	downCtx.Payload = payload
 
 	// Perform action
-	_err = ctrl.Down(downCtx)
+	__err = ctrl.Down(downCtx)
 
 	// Validate response
-	if _err != nil {
-		t.Fatalf("controller returned %+v, logs:\n%s", _err, logBuf.String())
+	if __err != nil {
+		t.Fatalf("controller returned %+v, logs:\n%s", __err, logBuf.String())
 	}
 	if rw.Code != 200 {
 		t.Errorf("invalid response status code: got %+v, expected 200", rw.Code)

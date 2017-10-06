@@ -2,7 +2,6 @@ package admin
 
 import (
 	"errors"
-
 	"github.com/goadesign/goa"
 	"github.com/zenoss/zenkit/admin/app"
 	"github.com/zenoss/zenkit/healthcheck"
@@ -22,7 +21,8 @@ func NewHealthController(service *goa.Service) *HealthController {
 func (c *HealthController) Down(ctx *app.DownHealthContext) error {
 	// HealthController_Down: start_implement
 
-	updater.Update(errors.New("manual check"))
+	ContextLogger(ctx).WithField("reason", ctx.Payload.Reason).Info("Manual HTTP Status DOWN")
+	updater.Update(errors.New(ctx.Payload.Reason))
 
 	// HealthController_Down: end_implement
 	return nil
@@ -45,6 +45,7 @@ func (c *HealthController) Health(ctx *app.HealthHealthContext) error {
 func (c *HealthController) Up(ctx *app.UpHealthContext) error {
 	// HealthController_Up: start_implement
 
+	ContextLogger(ctx).Info("Manual HTTP Status UP")
 	updater.Update(nil)
 
 	// HealthController_Up: end_implement

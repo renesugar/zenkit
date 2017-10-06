@@ -7,6 +7,7 @@ import (
 	"github.com/goadesign/goa"
 	"github.com/zenoss/zenkit"
 	. "github.com/zenoss/zenkit/admin"
+	"github.com/zenoss/zenkit/admin/app"
 	"github.com/zenoss/zenkit/admin/app/test"
 	"github.com/zenoss/zenkit/healthcheck"
 
@@ -53,7 +54,9 @@ var _ = Describe("Health", func() {
 
 		By("applying the DOWN state to the service")
 
-		test.DownHealthOK(t, ctx, svc, ctrl)
+		test.DownHealthOK(t, ctx, svc, ctrl, &app.DownHealthPayload{
+			Reason: "testing",
+		})
 		test.HealthHealthServiceUnavailable(t, ctx, svc, ctrl)
 
 		By("applying the UP state to the service")

@@ -78,29 +78,4 @@ var _ = Describe("Admin", func() {
 		})
 	})
 
-	Context("when the Swagger resource is requested", func() {
-		It("should respond OK", func() {
-			test.SwaggerAdminOK(t, ctx, svc, ctrl)
-		})
-	})
-
-	Context("when the SwaggerJSON resource is requested", func() {
-		originalAsset := SwaggerJSONAsset
-		Context("when the swagger.json asset is missing", func() {
-			BeforeEach(func() {
-				SwaggerJSONAsset = "none"
-			})
-			AfterEach(func() {
-				SwaggerJSONAsset = originalAsset
-			})
-			It("should respond with an InternalServerError", func() {
-				test.SwaggerJSONAdminInternalServerError(t, ctx, svc, ctrl)
-			})
-		})
-		Context("when the swagger.json asset is available", func() {
-			It("should respond OK", func() {
-				test.SwaggerJSONAdminOK(t, ctx, svc, ctrl)
-			})
-		})
-	})
 })

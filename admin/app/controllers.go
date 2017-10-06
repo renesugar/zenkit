@@ -32,8 +32,6 @@ type AdminController interface {
 	goa.Muxer
 	Metrics(*MetricsAdminContext) error
 	Ping(*PingAdminContext) error
-	Swagger(*SwaggerAdminContext) error
-	SwaggerJSON(*SwaggerJSONAdminContext) error
 }
 
 // MountAdminController "mounts" a Admin resource controller on the given service.
@@ -72,36 +70,6 @@ func MountAdminController(service *goa.Service, ctrl AdminController) {
 	service.LogInfo("mount", "ctrl", "Admin", "action", "Ping", "route", "HEAD /ping")
 	service.Mux.Handle("GET", "/ping", ctrl.MuxHandler("ping", h, nil))
 	service.LogInfo("mount", "ctrl", "Admin", "action", "Ping", "route", "GET /ping")
-
-	h = func(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
-		// Check if there was an error loading the request
-		if err := goa.ContextError(ctx); err != nil {
-			return err
-		}
-		// Build the context
-		rctx, err := NewSwaggerAdminContext(ctx, req, service)
-		if err != nil {
-			return err
-		}
-		return ctrl.Swagger(rctx)
-	}
-	service.Mux.Handle("GET", "/swagger", ctrl.MuxHandler("swagger", h, nil))
-	service.LogInfo("mount", "ctrl", "Admin", "action", "Swagger", "route", "GET /swagger")
-
-	h = func(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
-		// Check if there was an error loading the request
-		if err := goa.ContextError(ctx); err != nil {
-			return err
-		}
-		// Build the context
-		rctx, err := NewSwaggerJSONAdminContext(ctx, req, service)
-		if err != nil {
-			return err
-		}
-		return ctrl.SwaggerJSON(rctx)
-	}
-	service.Mux.Handle("GET", "/swagger.json", ctrl.MuxHandler("swagger.json", h, nil))
-	service.LogInfo("mount", "ctrl", "Admin", "action", "SwaggerJSON", "route", "GET /swagger.json")
 }
 
 // HealthController is the controller interface for the Health actions.
@@ -127,9 +95,15 @@ func MountHealthController(service *goa.Service, ctrl HealthController) {
 		if err != nil {
 			return err
 		}
+		// Build the payload
+		if rawPayload := goa.ContextRequest(ctx).Payload; rawPayload != nil {
+			rctx.Payload = rawPayload.(*DownHealthPayload)
+		} else {
+			return goa.MissingPayloadError()
+		}
 		return ctrl.Down(rctx)
 	}
-	service.Mux.Handle("POST", "/health/down", ctrl.MuxHandler("down", h, nil))
+	service.Mux.Handle("POST", "/health/down", ctrl.MuxHandler("down", h, unmarshalDownHealthPayload))
 	service.LogInfo("mount", "ctrl", "Health", "action", "Down", "route", "POST /health/down")
 
 	h = func(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
@@ -163,4 +137,62 @@ func MountHealthController(service *goa.Service, ctrl HealthController) {
 	}
 	service.Mux.Handle("POST", "/health/up", ctrl.MuxHandler("up", h, nil))
 	service.LogInfo("mount", "ctrl", "Health", "action", "Up", "route", "POST /health/up")
+}
+
+// unmarshalDownHealthPayload unmarshals the request body into the context request data Payload field.
+func unmarshalDownHealthPayload(ctx context.Context, service *goa.Service, req *http.Request) error {
+	payload := &downHealthPayload{}
+	if err := service.DecodeRequest(req, payload); err != nil {
+		return err
+	}
+	if err := payload.Validate(); err != nil {
+		// Initialize payload with private data structure so it can be logged
+		goa.ContextRequest(ctx).Payload = payload
+		return err
+	}
+	goa.ContextRequest(ctx).Payload = payload.Publicize()
+	return nil
+}
+
+// SwaggerController is the controller interface for the Swagger actions.
+type SwaggerController interface {
+	goa.Muxer
+	JSON(*JSONSwaggerContext) error
+	Swagger(*SwaggerSwaggerContext) error
+}
+
+// MountSwaggerController "mounts" a Swagger resource controller on the given service.
+func MountSwaggerController(service *goa.Service, ctrl SwaggerController) {
+	initService(service)
+	var h goa.Handler
+
+	h = func(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
+		// Check if there was an error loading the request
+		if err := goa.ContextError(ctx); err != nil {
+			return err
+		}
+		// Build the context
+		rctx, err := NewJSONSwaggerContext(ctx, req, service)
+		if err != nil {
+			return err
+		}
+		return ctrl.JSON(rctx)
+	}
+	service.Mux.Handle("GET", "/swagger.json", ctrl.MuxHandler("json", h, nil))
+	service.LogInfo("mount", "ctrl", "Swagger", "action", "JSON", "route", "GET /swagger.json")
+
+	h = func(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
+		// Check if there was an error loading the request
+		if err := goa.ContextError(ctx); err != nil {
+			return err
+		}
+		// Build the context
+		rctx, err := NewSwaggerSwaggerContext(ctx, req, service)
+		if err != nil {
+			return err
+		}
+		return ctrl.Swagger(rctx)
+	}
+	service.Mux.Handle("GET", "/swagger", ctrl.MuxHandler("swagger", h, nil))
+	service.LogInfo("mount", "ctrl", "Swagger", "action", "Swagger", "route", "GET /swagger")
 }
