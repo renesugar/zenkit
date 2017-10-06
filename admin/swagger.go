@@ -2,9 +2,10 @@ package admin
 
 import (
 	"fmt"
+
 	"github.com/goadesign/goa"
-	"github.com/zenoss/edge/swagger"
 	"github.com/zenoss/zenkit/admin/app"
+	"github.com/zenoss/zenkit/admin/swagger"
 )
 
 // SwaggerController implements the swagger resource.
