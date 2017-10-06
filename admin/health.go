@@ -2,7 +2,6 @@ package admin
 
 import (
 	"errors"
-
 	"github.com/goadesign/goa"
 	"github.com/zenoss/zenkit/admin/app"
 	"github.com/zenoss/zenkit/healthcheck"

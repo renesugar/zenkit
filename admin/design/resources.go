@@ -26,16 +26,16 @@ var _ = Resource("admin", func() {
 })
 
 var _ = Resource("swagger", func() {
-	BasePath("/swagger")
+	BasePath("/")
 	Action("json", func() {
 		Description("Retrieve Swagger spec as JSON")
-		Routing(GET(".json"))
+		Routing(GET("/swagger.json"))
 		Response(OK, "application/json")
 		Response(InternalServerError, ErrorMedia)
 	})
 	Action("swagger", func() {
 		Description("Display Swagger using ReDoc")
-		Routing(GET(""))
+		Routing(GET("/swagger"))
 		Response(OK, "text/html")
 	})
 })

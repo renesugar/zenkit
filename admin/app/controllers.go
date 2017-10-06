@@ -178,8 +178,8 @@ func MountSwaggerController(service *goa.Service, ctrl SwaggerController) {
 		}
 		return ctrl.JSON(rctx)
 	}
-	service.Mux.Handle("GET", "/swagger/.json", ctrl.MuxHandler("json", h, nil))
-	service.LogInfo("mount", "ctrl", "Swagger", "action", "JSON", "route", "GET /swagger/.json")
+	service.Mux.Handle("GET", "/swagger.json", ctrl.MuxHandler("json", h, nil))
+	service.LogInfo("mount", "ctrl", "Swagger", "action", "JSON", "route", "GET /swagger.json")
 
 	h = func(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
 		// Check if there was an error loading the request

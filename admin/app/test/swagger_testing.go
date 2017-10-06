@@ -49,7 +49,7 @@ func JSONSwaggerInternalServerError(t goatest.TInterface, ctx context.Context, s
 	// Setup request context
 	rw := httptest.NewRecorder()
 	u := &url.URL{
-		Path: fmt.Sprintf("/swagger/.json"),
+		Path: fmt.Sprintf("/swagger.json"),
 	}
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
@@ -113,7 +113,7 @@ func JSONSwaggerOK(t goatest.TInterface, ctx context.Context, service *goa.Servi
 	// Setup request context
 	rw := httptest.NewRecorder()
 	u := &url.URL{
-		Path: fmt.Sprintf("/swagger/.json"),
+		Path: fmt.Sprintf("/swagger.json"),
 	}
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {

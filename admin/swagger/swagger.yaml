@@ -186,7 +186,7 @@ paths:
       summary: swagger swagger
       tags:
       - swagger
-  /swagger/.json:
+  /swagger.json:
     get:
       description: Retrieve Swagger spec as JSON
       operationId: swagger#json
