@@ -35,8 +35,11 @@ func NewAdminService(parent *goa.Service) *goa.Service {
 	c := admin.NewAdminController(svc)
 	app.MountAdminController(svc, c)
 
-	c1 := admin.NewHealthController(svc)
-	app.MountHealthController(svc, c1)
+	c2 := admin.NewHealthController(svc)
+	app.MountHealthController(svc, c2)
+
+	c3 := admin.NewSwaggerController(svc)
+	app.MountSwaggerController(svc, c3)
 
 	return svc
 }

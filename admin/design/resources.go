@@ -23,15 +23,19 @@ var _ = Resource("admin", func() {
 		Response(OK, "application/json")
 		Response(InternalServerError, ErrorMedia)
 	})
-	Action("swagger.json", func() {
+})
+
+var _ = Resource("swagger", func() {
+	BasePath("/swagger")
+	Action("json", func() {
 		Description("Retrieve Swagger spec as JSON")
-		Routing(GET("/swagger.json"))
+		Routing(GET(".json"))
 		Response(OK, "application/json")
 		Response(InternalServerError, ErrorMedia)
 	})
 	Action("swagger", func() {
 		Description("Display Swagger using ReDoc")
-		Routing(GET("/swagger"))
+		Routing(GET(""))
 		Response(OK, "text/html")
 	})
 })
@@ -45,13 +49,17 @@ var _ = Resource("health", func() {
 		Response(ServiceUnavailable, HashOf(String, String))
 	})
 	Action("up", func() {
-		Description("Sets manual_http_status to return nil")
+		Description("Sets manual_http_status to nil")
 		Routing(POST("/up"))
 		Response(OK)
 	})
 	Action("down", func() {
 		Description("Sets manual_http_status to an error")
 		Routing(POST("/down"))
+		Payload(func() {
+			Member("reason")
+			Required("reason")
+		})
 		Response(OK)
 	})
 })

@@ -89,71 +89,12 @@ func (ctx *PingAdminContext) OK(resp []byte) error {
 	return err
 }
 
-// SwaggerAdminContext provides the admin swagger action context.
-type SwaggerAdminContext struct {
-	context.Context
-	*goa.ResponseData
-	*goa.RequestData
-}
-
-// NewSwaggerAdminContext parses the incoming request URL and body, performs validations and creates the
-// context used by the admin controller swagger action.
-func NewSwaggerAdminContext(ctx context.Context, r *http.Request, service *goa.Service) (*SwaggerAdminContext, error) {
-	var err error
-	resp := goa.ContextResponse(ctx)
-	resp.Service = service
-	req := goa.ContextRequest(ctx)
-	req.Request = r
-	rctx := SwaggerAdminContext{Context: ctx, ResponseData: resp, RequestData: req}
-	return &rctx, err
-}
-
-// OK sends a HTTP response with status code 200.
-func (ctx *SwaggerAdminContext) OK(resp []byte) error {
-	ctx.ResponseData.Header().Set("Content-Type", "text/html")
-	ctx.ResponseData.WriteHeader(200)
-	_, err := ctx.ResponseData.Write(resp)
-	return err
-}
-
-// SwaggerJSONAdminContext provides the admin swagger.json action context.
-type SwaggerJSONAdminContext struct {
-	context.Context
-	*goa.ResponseData
-	*goa.RequestData
-}
-
-// NewSwaggerJSONAdminContext parses the incoming request URL and body, performs validations and creates the
-// context used by the admin controller swagger.json action.
-func NewSwaggerJSONAdminContext(ctx context.Context, r *http.Request, service *goa.Service) (*SwaggerJSONAdminContext, error) {
-	var err error
-	resp := goa.ContextResponse(ctx)
-	resp.Service = service
-	req := goa.ContextRequest(ctx)
-	req.Request = r
-	rctx := SwaggerJSONAdminContext{Context: ctx, ResponseData: resp, RequestData: req}
-	return &rctx, err
-}
-
-// OK sends a HTTP response with status code 200.
-func (ctx *SwaggerJSONAdminContext) OK(resp []byte) error {
-	ctx.ResponseData.Header().Set("Content-Type", "application/json")
-	ctx.ResponseData.WriteHeader(200)
-	_, err := ctx.ResponseData.Write(resp)
-	return err
-}
-
-// InternalServerError sends a HTTP response with status code 500.
-func (ctx *SwaggerJSONAdminContext) InternalServerError(r error) error {
-	ctx.ResponseData.Header().Set("Content-Type", "application/vnd.goa.error")
-	return ctx.ResponseData.Service.Send(ctx.Context, 500, r)
-}
-
 // DownHealthContext provides the health down action context.
 type DownHealthContext struct {
 	context.Context
 	*goa.ResponseData
 	*goa.RequestData
+	Payload *DownHealthPayload
 }
 
 // NewDownHealthContext parses the incoming request URL and body, performs validations and creates the
@@ -166,6 +107,41 @@ func NewDownHealthContext(ctx context.Context, r *http.Request, service *goa.Ser
 	req.Request = r
 	rctx := DownHealthContext{Context: ctx, ResponseData: resp, RequestData: req}
 	return &rctx, err
+}
+
+// downHealthPayload is the health down action payload.
+type downHealthPayload struct {
+	Reason *string `form:"reason,omitempty" json:"reason,omitempty" xml:"reason,omitempty"`
+}
+
+// Validate runs the validation rules defined in the design.
+func (payload *downHealthPayload) Validate() (err error) {
+	if payload.Reason == nil {
+		err = goa.MergeErrors(err, goa.MissingAttributeError(`raw`, "reason"))
+	}
+	return
+}
+
+// Publicize creates DownHealthPayload from downHealthPayload
+func (payload *downHealthPayload) Publicize() *DownHealthPayload {
+	var pub DownHealthPayload
+	if payload.Reason != nil {
+		pub.Reason = *payload.Reason
+	}
+	return &pub
+}
+
+// DownHealthPayload is the health down action payload.
+type DownHealthPayload struct {
+	Reason string `form:"reason" json:"reason" xml:"reason"`
+}
+
+// Validate runs the validation rules defined in the design.
+func (payload *DownHealthPayload) Validate() (err error) {
+	if payload.Reason == "" {
+		err = goa.MergeErrors(err, goa.MissingAttributeError(`raw`, "reason"))
+	}
+	return
 }
 
 // OK sends a HTTP response with status code 200.
@@ -231,6 +207,66 @@ func NewUpHealthContext(ctx context.Context, r *http.Request, service *goa.Servi
 // OK sends a HTTP response with status code 200.
 func (ctx *UpHealthContext) OK(resp []byte) error {
 	ctx.ResponseData.Header().Set("Content-Type", "text/plain")
+	ctx.ResponseData.WriteHeader(200)
+	_, err := ctx.ResponseData.Write(resp)
+	return err
+}
+
+// JSONSwaggerContext provides the swagger json action context.
+type JSONSwaggerContext struct {
+	context.Context
+	*goa.ResponseData
+	*goa.RequestData
+}
+
+// NewJSONSwaggerContext parses the incoming request URL and body, performs validations and creates the
+// context used by the swagger controller json action.
+func NewJSONSwaggerContext(ctx context.Context, r *http.Request, service *goa.Service) (*JSONSwaggerContext, error) {
+	var err error
+	resp := goa.ContextResponse(ctx)
+	resp.Service = service
+	req := goa.ContextRequest(ctx)
+	req.Request = r
+	rctx := JSONSwaggerContext{Context: ctx, ResponseData: resp, RequestData: req}
+	return &rctx, err
+}
+
+// OK sends a HTTP response with status code 200.
+func (ctx *JSONSwaggerContext) OK(resp []byte) error {
+	ctx.ResponseData.Header().Set("Content-Type", "application/json")
+	ctx.ResponseData.WriteHeader(200)
+	_, err := ctx.ResponseData.Write(resp)
+	return err
+}
+
+// InternalServerError sends a HTTP response with status code 500.
+func (ctx *JSONSwaggerContext) InternalServerError(r error) error {
+	ctx.ResponseData.Header().Set("Content-Type", "application/vnd.goa.error")
+	return ctx.ResponseData.Service.Send(ctx.Context, 500, r)
+}
+
+// SwaggerSwaggerContext provides the swagger swagger action context.
+type SwaggerSwaggerContext struct {
+	context.Context
+	*goa.ResponseData
+	*goa.RequestData
+}
+
+// NewSwaggerSwaggerContext parses the incoming request URL and body, performs validations and creates the
+// context used by the swagger controller swagger action.
+func NewSwaggerSwaggerContext(ctx context.Context, r *http.Request, service *goa.Service) (*SwaggerSwaggerContext, error) {
+	var err error
+	resp := goa.ContextResponse(ctx)
+	resp.Service = service
+	req := goa.ContextRequest(ctx)
+	req.Request = r
+	rctx := SwaggerSwaggerContext{Context: ctx, ResponseData: resp, RequestData: req}
+	return &rctx, err
+}
+
+// OK sends a HTTP response with status code 200.
+func (ctx *SwaggerSwaggerContext) OK(resp []byte) error {
+	ctx.ResponseData.Header().Set("Content-Type", "text/html")
 	ctx.ResponseData.WriteHeader(200)
 	_, err := ctx.ResponseData.Write(resp)
 	return err

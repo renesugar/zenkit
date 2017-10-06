@@ -11,5 +11,6 @@ func ResetRegistry() {
 }
 
 func init() {
-	ResetRegistry()
+	updater = healthcheck.NewStatusUpdater()
+	healthcheck.Register("manual_http_status", updater)
 }

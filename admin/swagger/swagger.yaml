@@ -1,6 +1,17 @@
 consumes:
 - application/json
 definitions:
+  DownHealthPayload:
+    example:
+      reason: Laudantium qui ex quibusdam sapiente tempora.
+    properties:
+      reason:
+        example: Laudantium qui ex quibusdam sapiente tempora.
+        type: string
+    required:
+    - reason
+    title: DownHealthPayload
+    type: object
   error:
     description: Error response media type (default view)
     example:
@@ -78,6 +89,12 @@ paths:
     post:
       description: Sets manual_http_status to an error
       operationId: health#down
+      parameters:
+      - in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/DownHealthPayload'
       produces:
       - text/plain
       responses:
@@ -90,7 +107,7 @@ paths:
       - health
   /health/up:
     post:
-      description: Sets manual_http_status to return nil
+      description: Sets manual_http_status to nil
       operationId: health#up
       produces:
       - text/plain
@@ -158,7 +175,7 @@ paths:
   /swagger:
     get:
       description: Display Swagger using ReDoc
-      operationId: admin#swagger
+      operationId: swagger#swagger
       produces:
       - text/html
       responses:
@@ -166,13 +183,13 @@ paths:
           description: OK
       schemes:
       - http
-      summary: swagger admin
+      summary: swagger swagger
       tags:
-      - admin
-  /swagger.json:
+      - swagger
+  /swagger/.json:
     get:
       description: Retrieve Swagger spec as JSON
-      operationId: admin#swagger.json
+      operationId: swagger#json
       produces:
       - application/json
       - application/vnd.goa.error
@@ -185,9 +202,9 @@ paths:
             $ref: '#/definitions/error'
       schemes:
       - http
-      summary: swagger.json admin
+      summary: json swagger
       tags:
-      - admin
+      - swagger
 produces:
 - application/json
 responses:
