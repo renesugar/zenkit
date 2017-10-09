@@ -17,6 +17,10 @@ const (
 	AuthDisabledConfig = "auth.disabled"
 	AuthKeyFileConfig  = "auth.key_file"
 
+	SignKeyFileConfig = "sign.key_file"
+	SignMethodConfig  = "sign.method"
+	SignExpiryConfig  = "sign.expiry"
+
 	HTTPPortConfig  = "http.port"
 	AdminPortConfig = "admin.port"
 )
@@ -49,13 +53,27 @@ func AddTracingConfigOptions(cmd *cobra.Command) {
 }
 
 func AddAuthConfigOptions(cmd *cobra.Command) {
-	cmd.PersistentFlags().String("auth-key-file", "", "File containing authentication verification key")
+	cmd.PersistentFlags().String("auth-key-file", "/run/secrets/auth_key", "File containing authentication verification key")
 	viper.BindPFlag(AuthKeyFileConfig, cmd.PersistentFlags().Lookup("auth-key-file"))
-	viper.SetDefault(AuthKeyFileConfig, "")
+	viper.SetDefault(AuthKeyFileConfig, "/run/secrets/auth_key")
 
 	cmd.PersistentFlags().Bool("auth-disabled", false, "Run with middleware that injects a default admin identity for unauthenticated requests")
 	viper.BindPFlag(AuthDisabledConfig, cmd.PersistentFlags().Lookup("auth-disabled"))
 	viper.SetDefault(AuthDisabledConfig, false)
+}
+
+func AddSignConfigOptions(cmd *cobra.Command) {
+	cmd.PersistentFlags().String("sign-key-file", "/run/secrets/sign_key", "File containing key to sign jwt with")
+	viper.BindPFlag(SignKeyFileConfig, cmd.PersistentFlags().Lookup("sign-key-file"))
+	viper.SetDefault(SignKeyFileConfig, "/run/secrets/sign_key")
+
+	cmd.PersistentFlags().String("sign-method", "HS256", "Method used to sign jwt")
+	viper.BindPFlag(SignMethodConfig, cmd.PersistentFlags().Lookup("sign-method"))
+	viper.SetDefault(SignMethodConfig, "HS256")
+
+	cmd.PersistentFlags().Int("sign-expiry", 60, "Duration, in seconds, a signed jwt is valid for")
+	viper.BindPFlag(SignExpiryConfig, cmd.PersistentFlags().Lookup("sign-expiry"))
+	viper.SetDefault(SignExpiryConfig, 60)
 }
 
 func AddHTTPOptions(cmd *cobra.Command, port int) {
