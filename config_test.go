@@ -146,8 +146,8 @@ var _ = Describe("Config", func() {
 	}
 
 	TestAuthFlags := func() {
-		It("should not have a default auth key file", func() {
-			Ω(viper.Get(AuthKeyFileConfig)).Should(BeEmpty())
+		It("should have a default auth key file", func() {
+			Ω(viper.Get(AuthKeyFileConfig)).Should(Equal("/run/secrets/auth_key"))
 		})
 
 		It("should have auth enabled by default", func() {
@@ -179,6 +179,59 @@ var _ = Describe("Config", func() {
 		})
 	}
 
+	TestSignFlags := func() {
+		It("should have a default sign key file", func() {
+			Ω(viper.Get(SignKeyFileConfig)).Should(Equal("/run/secrets/sign_key"))
+		})
+
+		It("should have a default sign method", func() {
+			Ω(viper.Get(SignMethodConfig)).Should(Equal("HS256"))
+		})
+
+		It("should have a default sign expiry", func() {
+			Ω(viper.GetInt(SignExpiryConfig)).Should(BeNumerically("==", 60))
+		})
+
+		It("should allow setting the sign key file via env var", func() {
+			keyfile := test.RandString(10)
+			setenv("SIGN_KEY_FILE", keyfile)
+			Ω(viper.GetString(SignKeyFileConfig)).Should(Equal(keyfile))
+		})
+
+		It("should allow setting the sign method via env var", func() {
+			method := test.RandString(5)
+			setenv("SIGN_METHOD", method)
+			Ω(viper.GetString(SignMethodConfig)).Should(Equal(method))
+		})
+
+		It("should allow setting the sign expiry via env var", func() {
+			seconds := 17
+			setenv("SIGN_EXPIRY", fmt.Sprintf("%d", seconds))
+			Ω(viper.GetInt(SignExpiryConfig)).Should(BeNumerically("==", seconds))
+		})
+
+		It("should allow setting the sign key file via command line", func() {
+			keyfile := test.RandString(10)
+			err := cmd.ParseFlags([]string{"--sign-key-file", keyfile})
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(viper.GetString(SignKeyFileConfig)).Should(Equal(keyfile))
+		})
+
+		It("should allow setting the sign method via command line", func() {
+			method := test.RandString(5)
+			err := cmd.ParseFlags([]string{"--sign-method", method})
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(viper.GetString(SignMethodConfig)).Should(Equal(method))
+		})
+
+		It("should allow setting the sign expiry via command line", func() {
+			seconds := 17
+			err := cmd.ParseFlags([]string{"--sign-expiry", fmt.Sprintf("%d", seconds)})
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(viper.GetInt(SignExpiryConfig)).Should(BeNumerically("==", seconds))
+		})
+	}
+
 	Context("with tracing flags", func() {
 
 		BeforeEach(func() {
@@ -195,6 +248,14 @@ var _ = Describe("Config", func() {
 
 		TestAuthFlags()
 
+	})
+
+	Context("with sign flags", func() {
+		BeforeEach(func() {
+			AddSignConfigOptions(cmd)
+		})
+
+		TestSignFlags()
 	})
 
 	Context("with HTTP flags", func() {
