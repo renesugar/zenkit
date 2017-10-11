@@ -111,11 +111,12 @@ PZ7f7nhaGd0pr6KF1z/GJUA2IpgsZ/pzJmAO3BZMAFfzp3u2kpBRry+BUXf5xg+3
 xhcmeuiFwygRmLe2q0SQ1n6ekrw+RcIHfsWxqq6A028/N8GqGdbcJ5qL5ITEKJZT
 BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 -----END CERTIFICATE-----`)
-		rsaFile *os.File
-		svc     *goa.Service
-		resp    *httptest.ResponseRecorder
-		req     *http.Request
-		handler = func(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
+		rsaFile   *os.File
+		svc       *goa.Service
+		resp      *httptest.ResponseRecorder
+		req       *http.Request
+		claimsCtx context.Context
+		handler   = func(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
 			token = jwt.ContextJWT(ctx)
 			ident = ContextIdentity(ctx)
 			return nil
@@ -135,6 +136,7 @@ BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 		req, _ = http.NewRequest("", "http://example.com/", nil)
 		resp = httptest.NewRecorder()
 		audience = []string{"tenant"}
+		claimsCtx = context.Background()
 	})
 
 	JustBeforeEach(func() {
@@ -306,10 +308,15 @@ BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 
 	Context("signing with a dynamic signer", func() {
 		claimsFunc := func() (jwtpkg.Claims, error) {
-			return newClaims(id, audience), nil
+			ctxIdent := ContextIdentity(claimsCtx)
+			return newClaims(ctxIdent.ID(), []string{ctxIdent.Tenant()}), nil
 		}
 		signer := &DynamicSigner{}
 		BeforeEach(func() {
+			claimsCtx = WithIdentity(context.Background(), &testIdentity{
+				id,
+				audience[0],
+			})
 			signer = NewSigner(claimsFunc, jwtpkg.SigningMethodHS256, secret)
 			req.Header.Set("Authorization", "abc123")
 		})
@@ -330,6 +337,12 @@ BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 			Context("with a valid secret", func() {
 				BeforeEach(func() {
 					signer.Secret = secret
+					id = "abcd"
+					audience = []string{"tenant"}
+					claimsCtx = WithIdentity(context.Background(), &testIdentity{
+						id,
+						audience[0],
+					})
 				})
 				It("should return a Signer, that puts a good token in request headers", func() {
 					err := signer.Sign(req)
