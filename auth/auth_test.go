@@ -304,6 +304,59 @@ BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 
 	})
 
+	Context("signing with a dynamic signer", func() {
+		claimsFunc := func() (jwtpkg.Claims, error) {
+			return newClaims(id, audience), nil
+		}
+		signer := &DynamicSigner{}
+		BeforeEach(func() {
+			signer = NewSigner(claimsFunc, jwtpkg.SigningMethodHS256, secret)
+			req.Header.Set("Authorization", "abc123")
+		})
+		Context("when the claimsFunc returns a claims", func() {
+			BeforeEach(func() {
+				signer.ClaimsFunc = claimsFunc
+			})
+			Context("with an invalid secret", func() {
+				BeforeEach(func() {
+					signer.Method = jwtpkg.SigningMethodRS256
+					signer.Secret = []byte("secret")
+				})
+				It("signing should return an error", func() {
+					err := signer.Sign(req)
+					Ω(err).Should(HaveOccurred())
+				})
+			})
+			Context("with a valid secret", func() {
+				BeforeEach(func() {
+					signer.Secret = secret
+				})
+				It("should return a Signer, that puts a good token in request headers", func() {
+					err := signer.Sign(req)
+					Ω(err).ShouldNot(HaveOccurred())
+					Ω(req.Header["Authorization"][0]).Should(Equal("Bearer " + signedToken()))
+				})
+			})
+		})
+		Context("when the claimsFunc returns an error", func() {
+			badClaimsFunc := func() (jwtpkg.Claims, error) {
+				return nil, errors.New("some error")
+			}
+			BeforeEach(func() {
+				signer.ClaimsFunc = badClaimsFunc
+			})
+			Context("with a valid secret", func() {
+				BeforeEach(func() {
+					signer.Secret = []byte("secret")
+				})
+				It("should return an error", func() {
+					err := signer.Sign(req)
+					Ω(err).Should(HaveOccurred())
+				})
+			})
+		})
+	})
+
 	Context("using the jwt signer", func() {
 		It("should return nil if there is no auth on the header", func() {
 			signer := JWTSigner(req)

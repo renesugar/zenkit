@@ -2,12 +2,9 @@ package auth
 
 import (
 	"context"
-	"net/http"
-	"strings"
 	"time"
 
 	jwtgo "github.com/dgrijalva/jwt-go"
-	"github.com/goadesign/goa/client"
 	"github.com/goadesign/goa/design"
 	"github.com/goadesign/goa/design/apidsl"
 	"github.com/spf13/afero"
@@ -51,22 +48,6 @@ func JWT() *design.SecuritySchemeDefinition {
 		})
 	}
 	return localJWT
-}
-
-func JWTSigner(req *http.Request) *client.JWTSigner {
-	token := &client.StaticToken{}
-
-	parts := strings.Fields(req.Header.Get("Authorization"))
-	switch len(parts) {
-	case 0:
-		return nil
-	case 1:
-		token.Value = parts[0]
-	default:
-		token.Type = parts[0]
-		token.Value = strings.Join(parts[1:], " ")
-	}
-	return &client.JWTSigner{TokenSource: &client.StaticTokenSource{StaticToken: token}}
 }
 
 func BuildDevToken(ctx context.Context, signingMethod jwtgo.SigningMethod) string {
