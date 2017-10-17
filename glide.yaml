@@ -33,6 +33,12 @@ import:
   version: 9e638d38cf6977a37a8ea0078f3ee75a7cdb2dd1
 - package: github.com/docker/libtrust
   version: 9cbd2a1374f46905c68a4eb3694a130610adc62a
+- package: github.com/xeipuuv/gojsonschema
+  version: 93e72a773fade158921402d6a24c819b48aba29d
+- package: github.com/xeipuuv/gojsonpointer
+  version: e0fe6f68307607d540ed8eac07a342c33fa1b54a
+- package: github.com/xeipuuv/gojsonreference
+  version: e02fc20de94c78484cd5ffb007f8af96be030a45
 - package: github.com/goadesign/goa
   version: 0ad2e960bfbfb49cf94d3ce689a9426ef006babb
   subpackages:
