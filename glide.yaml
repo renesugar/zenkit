@@ -23,6 +23,16 @@ import:
   - project/options
 - package: github.com/docker/docker
   version: 75c7536d2e2e328b644bf69153de879d1d197988
+- package: github.com/docker/cli
+  version: d95fd2f38cfc23e077530c6181330727d561b6a0
+- package: github.com/docker/distribution
+  version: b38e5838b7b2f2ad48e06ec4b500011976080621
+- package: github.com/docker/go-connections
+  version: e15c02316c12de00874640cd76311849de2aeed5
+- package: github.com/docker/go-units
+  version: 9e638d38cf6977a37a8ea0078f3ee75a7cdb2dd1
+- package: github.com/docker/libtrust
+  version: 9cbd2a1374f46905c68a4eb3694a130610adc62a
 - package: github.com/goadesign/goa
   version: 0ad2e960bfbfb49cf94d3ce689a9426ef006babb
   subpackages:
