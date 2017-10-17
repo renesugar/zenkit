@@ -22,7 +22,7 @@ import:
   - project
   - project/options
 - package: github.com/docker/docker
-  version: 777d4a1bf45c85db6931205d4adbe38a17c583d7 
+  version: df423d57936bf6e94bb1e54892f5419e1d927708
 - package: github.com/goadesign/goa
   version: 0ad2e960bfbfb49cf94d3ce689a9426ef006babb
   subpackages:
