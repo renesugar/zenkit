@@ -11,7 +11,7 @@ import:
 - package: github.com/dgrijalva/jwt-go
   version: 3.0.0
 - package: github.com/docker/libcompose
-  version: 1b708aac26a4fc6f9bff31728a8e3a252ef57dbd
+  version: b2c0c6e7006959f15d7d3f64a653a339a4b68ff3
   subpackages:
   - config
   - docker
@@ -22,7 +22,7 @@ import:
   - project
   - project/options
 - package: github.com/docker/docker
-  version: df423d57936bf6e94bb1e54892f5419e1d927708
+  version: 75c7536d2e2e328b644bf69153de879d1d197988
 - package: github.com/goadesign/goa
   version: 0ad2e960bfbfb49cf94d3ce689a9426ef006babb
   subpackages:
