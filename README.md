@@ -36,7 +36,7 @@ Additional helpful utilities include:
   container, but you may find it convenient.
 
 ## Quickstart
-Just run this to create a microservice named `examplesvc`:
+Then, run this to create a microservice named `examplesvc`in `<GOPATH>/src/github.com/<your-org>`:
 
     bash <(curl -sSL https://git.io/vQB98) examplesvc
 
@@ -65,11 +65,11 @@ You can make requests against the included example endpoint:
 
 Then you can check metrics:
 
-    http :8080/_admin/metrics
+    http :9000/metrics
 
 And browse the currently-trivial Swagger spec:
 
-    http :8080/_admin/swagger
+    http :9000/swagger
 
 You'll need to [add your source](ZENOSS_EMPLOYEES.md#create-github-repo) to Github and 
 [create Jenkins jobs](ZENOSS_EMPLOYEES.md#create-jenkins-jobs) for continuous integration.
@@ -79,6 +79,10 @@ When you're ready to add business logic to your new service,
 
 ## Zenkit Components
 ### The zenkit library
+Install this package with `go get`:
+
+    go get github.com/zenoss/zenkit
+
 The _zenkit_ library provides:
 * A standard base microservice with middleware preconfigured to support
   authentication, logging, metrics, and request tracing
