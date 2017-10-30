@@ -36,7 +36,7 @@ Additional helpful utilities include:
   container, but you may find it convenient.
 
 ## Quickstart
-Then, run this to create a microservice named `examplesvc`in `<GOPATH>/src/github.com/<your-org>`:
+Just run this to create a microservice named `examplesvc`:
 
     bash <(curl -sSL https://git.io/vQB98) examplesvc
 
