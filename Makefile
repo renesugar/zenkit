@@ -5,6 +5,7 @@ PACKAGE              := github.com/zenoss/zenkit
 LOCAL_USER_ID        := $(shell id -u)
 BUILD_IMG            := zenoss/zenkit-build:$(ZENKIT_VERSION)
 COVERAGE_DIR         := coverage
+DOCKER_COMPOSE       := /usr/local/bin/docker-compose
 
 DOCKER_PARAMS        := --rm -v /var/run/docker.sock:/var/run/docker.sock \
 						     -v $(ROOTDIR):/go/src/$(PACKAGE):rw \
@@ -48,3 +49,12 @@ local-dev:
 	go get -u github.com/wadey/gocovmerge
 	go get -u github.com/axw/gocov/gocov
 	go get -u github.com/AlekSi/gocov-xml
+
+.PHONY: docker-compose
+docker-compose: $(DOCKER_COMPOSE)
+
+$(DOCKER_COMPOSE): DOCKER_COMPOSE_VERSION := 1.16.1
+$(DOCKER_COMPOSE):
+	@if [ ! -w $(@D) ]; then echo 'No docker-compose found. Please run "sudo make docker-compose" to install it.'; exit 2; else true; fi
+	@curl -L https://github.com/docker/compose/releases/download/$(DOCKER_COMPOSE_VERSION)/docker-compose-`uname -s`-`uname -m` > $@
+	@chmod +x $@
