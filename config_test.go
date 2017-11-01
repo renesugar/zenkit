@@ -232,6 +232,67 @@ var _ = Describe("Config", func() {
 		})
 	}
 
+	TestGCloudFlags := func() {
+		It("should allow setting the project id via env var", func() {
+			setenv("GCLOUD_PROJECT_ID", "test-project")
+			Ω(viper.GetString(GCProjectIDConfig)).Should(Equal("test-project"))
+		})
+
+		It("should allow setting the project id via command line", func() {
+			err := cmd.ParseFlags([]string{"--gcloud-project-id", "test-project"})
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(viper.GetString(GCProjectIDConfig)).Should(Equal("test-project"))
+		})
+
+		It("should have auth enabled by default", func() {
+			Ω(viper.Get(GCNoAuthConfig)).Should(BeFalse())
+		})
+
+		It("should allow disabling auth via env var", func() {
+			setenv("GCLOUD_NO_AUTH", "1")
+			Ω(viper.GetBool(GCNoAuthConfig)).Should(BeTrue())
+		})
+
+		It("should allow disabling auth via command line", func() {
+			err := cmd.ParseFlags([]string{"--gcloud-no-auth"})
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(viper.GetBool(GCNoAuthConfig)).Should(BeTrue())
+		})
+
+		It("should allow setting the bigtable host via env var", func() {
+			setenv("GCLOUD_EMULATOR_BIGTABLE", "host:9000")
+			Ω(viper.GetString(GCEmulatorBigtableConfig)).Should(Equal("host:9000"))
+		})
+
+		It("should allow setting the bigtable host via command line", func() {
+			err := cmd.ParseFlags([]string{"--gcloud-emulator-bigtable", "host:9000"})
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(viper.GetString(GCEmulatorBigtableConfig)).Should(Equal("host:9000"))
+		})
+
+		It("should allow setting the datastore host via env var", func() {
+			setenv("GCLOUD_EMULATOR_DATASTORE", "host:9001")
+			Ω(viper.GetString(GCEmulatorDatastoreConfig)).Should(Equal("host:9001"))
+		})
+
+		It("should allow setting the datastore host via command line", func() {
+			err := cmd.ParseFlags([]string{"--gcloud-emulator-datastore", "host:9001"})
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(viper.GetString(GCEmulatorDatastoreConfig)).Should(Equal("host:9001"))
+		})
+
+		It("should allow setting the pubsub host via command line", func() {
+			setenv("GCLOUD_EMULATOR_PUBSUB", "host:9002")
+			Ω(viper.GetString(GCEmulatorPubsubConfig)).Should(Equal("host:9002"))
+		})
+
+		It("should allow setting the pubsub host via command line", func() {
+			err := cmd.ParseFlags([]string{"--gcloud-emulator-pubsub", "host:9002"})
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(viper.GetString(GCEmulatorPubsubConfig)).Should(Equal("host:9002"))
+		})
+	}
+
 	Context("with tracing flags", func() {
 
 		BeforeEach(func() {
@@ -304,4 +365,15 @@ var _ = Describe("Config", func() {
 		TestTracingFlags()
 	})
 
+	Context("with gcloud flags", func() {
+
+		BeforeEach(func() {
+			AddGCloudOptions(cmd)
+			AddGCloudEmulatorBigtableOptions(cmd)
+			AddGCloudEmulatorDatastoreOptions(cmd)
+			AddGCloudEmulatorPubsubOptions(cmd)
+		})
+
+		TestGCloudFlags()
+	})
 })
