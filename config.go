@@ -23,6 +23,12 @@ const (
 
 	HTTPPortConfig  = "http.port"
 	AdminPortConfig = "admin.port"
+
+	GCProjectIDConfig         = "gcloud.project_id"
+	GCNoAuthConfig            = "gcloud.no_auth"
+	GCEmulatorBigtableConfig  = "gcloud.emulator.bigtable"
+	GCEmulatorDatastoreConfig = "gcloud.emulator.datastore"
+	GCEmulatorPubsubConfig    = "gcloud.emulator.pubsub"
 )
 
 func AddStandardServerOptions(cmd *cobra.Command, port, adminPort int) {
@@ -86,4 +92,32 @@ func AddAdminOptions(cmd *cobra.Command, adminPort int) {
 	cmd.PersistentFlags().Int("admin-port", adminPort, "Port to which the admin server should bind")
 	viper.BindPFlag(AdminPortConfig, cmd.PersistentFlags().Lookup("admin-port"))
 	viper.SetDefault(AdminPortConfig, fmt.Sprintf("%d", adminPort))
+}
+
+func AddGCloudOptions(cmd *cobra.Command) {
+	cmd.PersistentFlags().String("gcloud-project-id", "", "Google Cloud project/dataset id")
+	viper.BindPFlag(GCProjectIDConfig, cmd.PersistentFlags().Lookup("gcloud-project-id"))
+	viper.SetDefault(GCProjectIDConfig, "")
+
+	cmd.PersistentFlags().Bool("gcloud-no-auth", false, "Disable Google Cloud auth")
+	viper.BindPFlag(GCNoAuthConfig, cmd.PersistentFlags().Lookup("gcloud-no-auth"))
+	viper.SetDefault(GCNoAuthConfig, false)
+}
+
+func AddGCloudEmulatorBigtableOptions(cmd *cobra.Command) {
+	cmd.PersistentFlags().String("gcloud-emulator-bigtable", "", "Host:port of the gcloud bigtable emulator")
+	viper.BindPFlag(GCEmulatorBigtableConfig, cmd.PersistentFlags().Lookup("gcloud-emulator-bigtable"))
+	viper.SetDefault(GCEmulatorBigtableConfig, "")
+}
+
+func AddGCloudEmulatorDatastoreOptions(cmd *cobra.Command) {
+	cmd.PersistentFlags().String("gcloud-emulator-datastore", "", "Host:port of the gcloud datastore emulator")
+	viper.BindPFlag(GCEmulatorDatastoreConfig, cmd.PersistentFlags().Lookup("gcloud-emulator-datastore"))
+	viper.SetDefault(GCEmulatorDatastoreConfig, "")
+}
+
+func AddGCloudEmulatorPubsubOptions(cmd *cobra.Command) {
+	cmd.PersistentFlags().String("gcloud-emulator-pubsub", "", "Host:port of the gcloud pubsub emulator")
+	viper.BindPFlag(GCEmulatorPubsubConfig, cmd.PersistentFlags().Lookup("gcloud-emulator-pubsub"))
+	viper.SetDefault(GCEmulatorPubsubConfig, "")
 }
