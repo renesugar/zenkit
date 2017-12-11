@@ -26,6 +26,7 @@ const (
 
 	GCProjectIDConfig         = "gcloud.project_id"
 	GCNoAuthConfig            = "gcloud.no_auth"
+	GCUseEmulatorConfig       = "gcloud.use_emulator"
 	GCEmulatorBigtableConfig  = "gcloud.emulator.bigtable"
 	GCEmulatorDatastoreConfig = "gcloud.emulator.datastore"
 	GCEmulatorPubsubConfig    = "gcloud.emulator.pubsub"
@@ -114,6 +115,10 @@ func AddGCloudEmulatorDatastoreOptions(cmd *cobra.Command) {
 	cmd.PersistentFlags().String("gcloud-emulator-datastore", "", "Host:port of the gcloud datastore emulator")
 	viper.BindPFlag(GCEmulatorDatastoreConfig, cmd.PersistentFlags().Lookup("gcloud-emulator-datastore"))
 	viper.SetDefault(GCEmulatorDatastoreConfig, "")
+
+	cmd.PersistentFlags().Bool("gcloud-use-emulator", false, "Use gcloud datastore emulator")
+	viper.BindPFlag(GCUseEmulatorConfig, cmd.PersistentFlags().Lookup("gcloud-use-emulator"))
+	viper.SetDefault(GCUseEmulatorConfig, false)
 }
 
 func AddGCloudEmulatorPubsubOptions(cmd *cobra.Command) {
