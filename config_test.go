@@ -275,10 +275,21 @@ var _ = Describe("Config", func() {
 			Ω(viper.GetString(GCEmulatorDatastoreConfig)).Should(Equal("host:9001"))
 		})
 
+		It("should allow enabling the datastore emulator via env var", func() {
+			setenv("GCLOUD_EMULATOR_DATASTORE_ENABLED", "1")
+			Ω(viper.GetBool(GCEmulatorDatastoreEnabledConfig)).Should(BeTrue())
+		})
+
 		It("should allow setting the datastore host via command line", func() {
 			err := cmd.ParseFlags([]string{"--gcloud-emulator-datastore", "host:9001"})
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(viper.GetString(GCEmulatorDatastoreConfig)).Should(Equal("host:9001"))
+		})
+
+		It("should allow enabling datastore emulator via command line", func() {
+			err := cmd.ParseFlags([]string{"--gcloud-emulator-datastore-enabled", "1"})
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(viper.GetBool(GCEmulatorDatastoreEnabledConfig)).Should(BeTrue())
 		})
 
 		It("should allow setting the pubsub host via command line", func() {
