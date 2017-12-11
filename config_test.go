@@ -275,6 +275,12 @@ var _ = Describe("Config", func() {
 			Ω(viper.GetString(GCEmulatorDatastoreConfig)).Should(Equal("host:9001"))
 		})
 
+		It("should allow setting the datastore credentials file via env var", func() {
+			credsfile := "/run/credentials/datastore.json"
+			setenv("GCLOUD_EMULATOR_DATASTORE_CREDENTIALS", credsfile)
+			Ω(viper.GetString(GCEmulatorDatastoreCredentialsConfig)).Should(Equal(credsfile))
+		})
+
 		It("should allow enabling the datastore emulator via env var", func() {
 			setenv("GCLOUD_EMULATOR_DATASTORE_ENABLED", "1")
 			Ω(viper.GetBool(GCEmulatorDatastoreEnabledConfig)).Should(BeTrue())
@@ -284,6 +290,13 @@ var _ = Describe("Config", func() {
 			err := cmd.ParseFlags([]string{"--gcloud-emulator-datastore", "host:9001"})
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(viper.GetString(GCEmulatorDatastoreConfig)).Should(Equal("host:9001"))
+		})
+
+		It("should allow setting the datastore credentials file via command line", func() {
+			credsfile := "/run/credentials/datastore.json"
+			err := cmd.ParseFlags([]string{"--gcloud-emulator-datastore-credentials", credsfile})
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(viper.GetString(GCEmulatorDatastoreCredentialsConfig)).Should(Equal(credsfile))
 		})
 
 		It("should allow enabling datastore emulator via command line", func() {
