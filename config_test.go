@@ -244,21 +244,6 @@ var _ = Describe("Config", func() {
 			Ω(viper.GetString(GCProjectIDConfig)).Should(Equal("test-project"))
 		})
 
-		It("should have auth enabled by default", func() {
-			Ω(viper.Get(GCNoAuthConfig)).Should(BeFalse())
-		})
-
-		It("should allow disabling auth via env var", func() {
-			setenv("GCLOUD_NO_AUTH", "1")
-			Ω(viper.GetBool(GCNoAuthConfig)).Should(BeTrue())
-		})
-
-		It("should allow disabling auth via command line", func() {
-			err := cmd.ParseFlags([]string{"--gcloud-no-auth"})
-			Ω(err).ShouldNot(HaveOccurred())
-			Ω(viper.GetBool(GCNoAuthConfig)).Should(BeTrue())
-		})
-
 		It("should allow setting the bigtable host via env var", func() {
 			setenv("GCLOUD_EMULATOR_BIGTABLE", "host:9000")
 			Ω(viper.GetString(GCEmulatorBigtableConfig)).Should(Equal("host:9000"))
@@ -275,6 +260,12 @@ var _ = Describe("Config", func() {
 			Ω(viper.GetString(GCEmulatorDatastoreConfig)).Should(Equal("host:9001"))
 		})
 
+		It("should allow setting the datastore credentials file via env var", func() {
+			credsfile := "/run/credentials/datastore.json"
+			setenv("GCLOUD_DATASTORE_CREDENTIALS", credsfile)
+			Ω(viper.GetString(GCDatastoreCredentialsConfig)).Should(Equal(credsfile))
+		})
+
 		It("should allow enabling the datastore emulator via env var", func() {
 			setenv("GCLOUD_EMULATOR_DATASTORE_ENABLED", "1")
 			Ω(viper.GetBool(GCEmulatorDatastoreEnabledConfig)).Should(BeTrue())
@@ -284,6 +275,13 @@ var _ = Describe("Config", func() {
 			err := cmd.ParseFlags([]string{"--gcloud-emulator-datastore", "host:9001"})
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(viper.GetString(GCEmulatorDatastoreConfig)).Should(Equal("host:9001"))
+		})
+
+		It("should allow setting the datastore credentials file via command line", func() {
+			credsfile := "/run/credentials/datastore.json"
+			err := cmd.ParseFlags([]string{"--gcloud-datastore-credentials", credsfile})
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(viper.GetString(GCDatastoreCredentialsConfig)).Should(Equal(credsfile))
 		})
 
 		It("should allow enabling datastore emulator via command line", func() {

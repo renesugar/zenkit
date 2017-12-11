@@ -25,7 +25,7 @@ const (
 	AdminPortConfig = "admin.port"
 
 	GCProjectIDConfig                = "gcloud.project_id"
-	GCNoAuthConfig                   = "gcloud.no_auth"
+	GCDatastoreCredentialsConfig     = "gcloud.datastore.credentials"
 	GCEmulatorBigtableConfig         = "gcloud.emulator.bigtable"
 	GCEmulatorDatastoreConfig        = "gcloud.emulator.datastore"
 	GCEmulatorDatastoreEnabledConfig = "gcloud.emulator.datastore.enabled"
@@ -99,10 +99,6 @@ func AddGCloudOptions(cmd *cobra.Command) {
 	cmd.PersistentFlags().String("gcloud-project-id", "", "Google Cloud project/dataset id")
 	viper.BindPFlag(GCProjectIDConfig, cmd.PersistentFlags().Lookup("gcloud-project-id"))
 	viper.SetDefault(GCProjectIDConfig, "")
-
-	cmd.PersistentFlags().Bool("gcloud-no-auth", false, "Disable Google Cloud auth")
-	viper.BindPFlag(GCNoAuthConfig, cmd.PersistentFlags().Lookup("gcloud-no-auth"))
-	viper.SetDefault(GCNoAuthConfig, false)
 }
 
 func AddGCloudEmulatorBigtableOptions(cmd *cobra.Command) {
@@ -119,6 +115,10 @@ func AddGCloudEmulatorDatastoreOptions(cmd *cobra.Command) {
 	cmd.PersistentFlags().Bool("gcloud-emulator-datastore-enabled", false, "Use gcloud datastore emulator")
 	viper.BindPFlag(GCEmulatorDatastoreEnabledConfig, cmd.PersistentFlags().Lookup("gcloud-emulator-datastore-enabled"))
 	viper.SetDefault(GCEmulatorDatastoreEnabledConfig, false)
+
+	cmd.PersistentFlags().String("gcloud-datastore-credentials", "", "Location of datastore credentials file")
+	viper.BindPFlag(GCDatastoreCredentialsConfig, cmd.PersistentFlags().Lookup("gcloud-datastore-credentials"))
+	viper.SetDefault(GCDatastoreCredentialsConfig, "")
 }
 
 func AddGCloudEmulatorPubsubOptions(cmd *cobra.Command) {
