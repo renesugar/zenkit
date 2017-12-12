@@ -24,12 +24,12 @@ const (
 	HTTPPortConfig  = "http.port"
 	AdminPortConfig = "admin.port"
 
-	GCProjectIDConfig                = "gcloud.project_id"
-	GCDatastoreCredentialsConfig     = "gcloud.datastore.credentials"
-	GCEmulatorBigtableConfig         = "gcloud.emulator.bigtable"
-	GCEmulatorDatastoreConfig        = "gcloud.emulator.datastore"
-	GCEmulatorDatastoreEnabledConfig = "gcloud.emulator.datastore.enabled"
-	GCEmulatorPubsubConfig           = "gcloud.emulator.pubsub"
+	GCProjectIDConfig                 = "gcloud.project_id"
+	GCDatastoreCredentialsConfig      = "gcloud.datastore.credentials"
+	GCEmulatorBigtableConfig          = "gcloud.emulator.bigtable"
+	GCEmulatorDatastoreEnabledConfig  = "gcloud.emulator.datastore.enabled"
+	GCEmulatorDatastoreHostPortConfig = "gcloud.emulator.datastore.host_port"
+	GCEmulatorPubsubConfig            = "gcloud.emulator.pubsub"
 )
 
 func AddStandardServerOptions(cmd *cobra.Command, port, adminPort int) {
@@ -108,9 +108,9 @@ func AddGCloudEmulatorBigtableOptions(cmd *cobra.Command) {
 }
 
 func AddGCloudEmulatorDatastoreOptions(cmd *cobra.Command) {
-	cmd.PersistentFlags().String("gcloud-emulator-datastore", "", "Host:port of the gcloud datastore emulator")
-	viper.BindPFlag(GCEmulatorDatastoreConfig, cmd.PersistentFlags().Lookup("gcloud-emulator-datastore"))
-	viper.SetDefault(GCEmulatorDatastoreConfig, "")
+	cmd.PersistentFlags().String("gcloud-emulator-datastore-host-port", "", "Host:port of the gcloud datastore emulator")
+	viper.BindPFlag(GCEmulatorDatastoreHostPortConfig, cmd.PersistentFlags().Lookup("gcloud-emulator-datastore-host-port"))
+	viper.SetDefault(GCEmulatorDatastoreHostPortConfig, "")
 
 	cmd.PersistentFlags().Bool("gcloud-emulator-datastore-enabled", false, "Use gcloud datastore emulator")
 	viper.BindPFlag(GCEmulatorDatastoreEnabledConfig, cmd.PersistentFlags().Lookup("gcloud-emulator-datastore-enabled"))
