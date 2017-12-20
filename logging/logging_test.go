@@ -12,6 +12,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/goadesign/goa/middleware"
 )
 
 func TheTestFunction(ctx context.Context) {
@@ -110,6 +111,26 @@ var _ = Describe("Logging", func() {
 
 		It("shouldn't panic the trace logger if there's no logger defined", func() {
 			TheTestFunction(context.Background())
+		})
+	})
+
+	Context("with the service logger with request id", func() {
+		var svc *goa.Service
+
+		BeforeEach(func() {
+			svc = goa.New(test.RandString(8))
+			svc.Use(middleware.RequestID())
+			svc.WithLogger(ServiceLogger())
+		})
+
+		It("should produce a logger with logrus entry containing 'req_id'", func() {
+			var logger *logrus.Entry
+			entry := ContextLoggerWithReqId(svc.Context)
+			Ω(entry).ShouldNot(BeNil())
+			Ω(entry).Should(BeAssignableToTypeOf(logger))
+			Ω(entry.Data).Should(HaveLen(1))
+			Ω(entry.Data).Should(HaveKey("req_id"))
+			Ω(entry.Data["req_id"]).Should(Not(BeNil()))
 		})
 	})
 
