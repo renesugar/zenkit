@@ -5,9 +5,11 @@ import (
 	. "github.com/onsi/gomega"
 
 	"testing"
+	"github.com/onsi/ginkgo/reporters"
 )
 
 func TestChecks(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Checks Suite")
+	junitReporter := reporters.NewJUnitReporter("junit.xml")
+	RunSpecsWithDefaultAndCustomReporters(t, "Checks Suite", []Reporter{junitReporter})
 }
