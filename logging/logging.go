@@ -7,6 +7,7 @@ import (
 	goalogrus "github.com/goadesign/goa/logging/logrus"
 	"github.com/sirupsen/logrus"
 	"github.com/zenoss/zenkit/funcname"
+	"github.com/goadesign/goa/middleware"
 )
 
 var noop = func() {}
@@ -21,6 +22,14 @@ func ServiceLogger() goa.LogAdapter {
 
 func ContextLogger(ctx context.Context) *logrus.Entry {
 	return goalogrus.Entry(ctx)
+}
+
+func ContextLoggerWithReqId(ctx context.Context) *logrus.Entry {
+	entry := goalogrus.Entry(ctx)
+	if entry == nil {
+		return nil
+	}
+	return entry.WithField("req_id", middleware.ContextRequestID(ctx))
 }
 
 func SetLogLevel(svc *goa.Service, level string) {
@@ -48,7 +57,7 @@ func SetLogLevel(svc *goa.Service, level string) {
 }
 
 func LogEntryAndExit(ctx context.Context) func() {
-	logger := ContextLogger(ctx)
+	logger := ContextLoggerWithReqId(ctx)
 	if logger == nil {
 		return noop
 	}

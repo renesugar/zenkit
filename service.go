@@ -22,6 +22,7 @@ func NewService(name string, authDisabled bool) *goa.Service {
 	svc.Use(middleware.LogRequest(false))
 	svc.Use(metrics.MetricsMiddleware())
 	svc.Use(middleware.ErrorHandler(svc, true))
+	svc.Use(logging.LogErrorResponse())
 	svc.Use(middleware.Recover())
 
 	return svc

@@ -2,6 +2,7 @@ package admin_test
 
 import (
 	. "github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
 
 	"testing"
@@ -9,5 +10,6 @@ import (
 
 func TestAdmin(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Admin Suite")
+	junitReporter := reporters.NewJUnitReporter("junit.xml")
+	RunSpecsWithDefaultAndCustomReporters(t, "Admin Suite", []Reporter{junitReporter})
 }

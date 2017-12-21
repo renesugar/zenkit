@@ -1,5 +1,7 @@
 package: github.com/zenoss/zenkit
 import:
+- package: github.com/golang/sync
+  version: fd80eb9
 - package: github.com/Shopify/sarama
   version: 1.12.0
 - package: github.com/bsm/sarama-cluster
