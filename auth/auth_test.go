@@ -16,7 +16,6 @@ import (
 	"github.com/goadesign/goa/design"
 	"github.com/goadesign/goa/design/apidsl"
 	"github.com/goadesign/goa/dslengine"
-	"github.com/goadesign/goa/middleware/security/jwt"
 	"github.com/pkg/errors"
 	. "github.com/zenoss/zenkit/auth"
 	"github.com/zenoss/zenkit/claims"
@@ -91,7 +90,6 @@ var _ = Describe("Auth utilities", func() {
 		audience     []string
 		ident        Identity
 		file         *os.File
-		token        *jwtpkg.Token
 		secret       = []byte("secret")
 		rsaPublicKey = []byte(`-----BEGIN CERTIFICATE-----
 MIIC+zCCAeOgAwIBAgIJVuc8LVr4E501MA0GCSqGSIb3DQEBCwUAMBsxGTAXBgNV
@@ -117,16 +115,11 @@ BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 		req       *http.Request
 		claimsCtx context.Context
 		handler   = func(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
-			token = jwt.ContextJWT(ctx)
 			ident = ContextIdentity(ctx)
 			return nil
 		}
 		emptyMiddleware = func(h goa.Handler) goa.Handler {
 			return h
-		}
-		security = &goa.JWTSecurity{
-			In:   goa.LocHeader,
-			Name: "Authorization",
 		}
 	)
 
@@ -154,12 +147,11 @@ BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 		os.Remove(rsaFile.Name())
 		file = nil
 		rsaFile = nil
-		token = nil
 		ident = nil
 	})
 
 	getHandler := func(mw goa.Middleware) goa.Handler {
-		wrapper, err := JWTMiddleware(svc, file.Name(), mw, security)
+		wrapper, err := goa.NewMiddleware(JWTMiddleware)
 		Ω(err).ShouldNot(HaveOccurred())
 		return wrapper(handler)
 	}
@@ -257,6 +249,10 @@ BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 			received := ContextIdentity(ctx)
 			Ω(received).Should(Equal(ident))
 		})
+
+		It("should return nil if there is no identity on the context", func() {
+			Ω(ContextIdentity(context.Background())).Should(BeNil())
+		})
 	})
 
 	Context("when building the dev token", func() {
@@ -287,7 +283,7 @@ BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 	Context("using the dev mode middleware", func() {
 
 		It("should inject an authorization header when none exists", func() {
-			h := getHandler(DefaultJWTValidation)
+			h := getHandler(JWTMiddleware)
 			err := DevModeMiddleware(h)(context.Background(), resp, req)
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(ident).ShouldNot(BeNil())
@@ -297,7 +293,7 @@ BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 		It("should respect an existing authorization header", func() {
 			id = test.RandString(8)
 			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", signedToken()))
-			h := getHandler(DefaultJWTValidation)
+			h := getHandler(JWTMiddleware)
 			err := DevModeMiddleware(h)(svc.Context, resp, req)
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(ident).ShouldNot(BeNil())
@@ -406,17 +402,10 @@ BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 
 	Context("JWT middleware factory", func() {
 
-		It("should fail to create middleware when the file passed does not exist", func() {
-			KeyFileTimeout = 1 * time.Millisecond
-			_, err := JWTMiddleware(svc, "/this/is/notafile", DefaultJWTValidation, security)
-			Ω(err).Should(HaveOccurred())
-		})
-
 		It("should create middleware that rejects requests without a token", func() {
 			err := getHandler(emptyMiddleware)(context.Background(), resp, req)
 			Ω(err).Should(HaveOccurred())
 			assertSecurityError(err, `missing header "Authorization"`)
-			Ω(token).Should(BeNil())
 		})
 
 		It("should create middleware that rejects requests with an invalid token", func() {
@@ -424,7 +413,13 @@ BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 			err := getHandler(emptyMiddleware)(context.Background(), resp, req)
 			Ω(err).Should(HaveOccurred())
 			assertSecurityError(err, "JWT validation failed")
-			Ω(token).Should(BeNil())
+		})
+
+		It("should create middleware that rejects requests with an invalid claims", func() {
+			req.Header.Set("Authorization", "bearer abc123.fghgd123.fsbsg234")
+			err := getHandler(emptyMiddleware)(context.Background(), resp, req)
+			Ω(err).Should(HaveOccurred())
+			assertSecurityError(err, "JWT validation failed")
 		})
 
 		It("should create middleware that allows requests with a valid token", func() {
@@ -432,7 +427,6 @@ BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", signedToken()))
 			err := getHandler(emptyMiddleware)(context.Background(), resp, req)
 			Ω(err).ShouldNot(HaveOccurred())
-			Ω(token).ShouldNot(BeNil())
 		})
 
 		Context("using the default validator middleware", func() {
@@ -441,7 +435,7 @@ BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 					id = test.RandString(8)
 					req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", signedToken()))
 					ctx := context.Background()
-					err := getHandler(DefaultJWTValidation)(ctx, resp, req)
+					err := getHandler(JWTMiddleware)(ctx, resp, req)
 					Ω(err).ShouldNot(HaveOccurred())
 				})
 
@@ -464,25 +458,10 @@ BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 				})
 
 				It("should return an error", func() {
-					err := getHandler(DefaultJWTValidation)(context.Background(), resp, req)
+					err := getHandler(JWTMiddleware)(context.Background(), resp, req)
 					Ω(err).Should(HaveOccurred())
 				})
 			})
 		})
-
-		Context("using custom validator middleware", func() {
-			It("should reject requests that fail the custom middleware", func() {
-				TestError := errors.New("test error")
-				custom := func(ctx context.Context) error {
-					return TestError
-				}
-				id = test.RandString(8)
-				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", signedToken()))
-				err := getHandler(JWTValidatorFunc(custom))(svc.Context, resp, req)
-				Ω(err).Should(HaveOccurred())
-				Ω(errors.Cause(err)).Should(Equal(TestError))
-			})
-		})
 	})
-
 })

@@ -13,12 +13,11 @@ import (
 type JWTValidator func(ctx context.Context) error
 
 var (
-	FS                   = afero.NewReadOnlyFs(afero.NewOsFs())
-	AuthorizationHeader  = "Authorization"
-	DefaultJWTValidation = JWTValidatorFunc(func(_ context.Context) error { return nil })
-	KeyFileTimeout       = 30 * time.Second
-	localJWT             *design.SecuritySchemeDefinition
-	devJWT               string
+	FS                  = afero.NewReadOnlyFs(afero.NewOsFs())
+	AuthorizationHeader = "Authorization"
+	KeyFileTimeout      = 30 * time.Second
+	localJWT            *design.SecuritySchemeDefinition
+	devJWT              string
 
 	// These claims are used to populate the dev token (devJWT) using the secret defined by signingKey
 	//  - exp is equivalent to Monday, November 16, 2020 7:29:46 AM GMT
