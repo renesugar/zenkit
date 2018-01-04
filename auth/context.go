@@ -33,9 +33,9 @@ func ContextIdentity(ctx context.Context) Identity {
 
 func JWTMiddleware(h goa.Handler) goa.Handler {
 	return func(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
-		val := req.Header.Get("Authorization")
+		val := req.Header.Get(AuthorizationHeader)
 		if val == "" {
-			return jwt.ErrJWTError("missing header \"Authorization\"")
+			return jwt.ErrJWTError(fmt.Sprintf("missing header \"%s\"", AuthorizationHeader))
 		}
 
 		parts := strings.Split(val, ".")
