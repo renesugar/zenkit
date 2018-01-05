@@ -3,14 +3,16 @@ package auth_test
 import (
 	"context"
 	"crypto/rsa"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"time"
 
-	jwtpkg "github.com/dgrijalva/jwt-go"
+	jwtgo "github.com/dgrijalva/jwt-go"
 	"github.com/goadesign/goa"
 	"github.com/goadesign/goa/client"
 	"github.com/goadesign/goa/design"
@@ -54,9 +56,7 @@ func newClaims(id string, audience []string) claims.StandardClaims {
 		Sub: id,
 		Aud: audience,
 		Exp: now.Add(time.Hour).Unix(),
-		Nbf: now.Unix(),
 		Iat: now.Unix(),
-		Jti: "0",
 	}
 }
 
@@ -88,7 +88,7 @@ var _ = Describe("Auth utilities", func() {
 	var (
 		id           string
 		audience     []string
-		ident        Identity
+		ident        TenantIdentity
 		file         *os.File
 		secret       = []byte("secret")
 		rsaPublicKey = []byte(`-----BEGIN CERTIFICATE-----
@@ -114,13 +114,18 @@ BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 		resp      *httptest.ResponseRecorder
 		req       *http.Request
 		claimsCtx context.Context
-		handler   = func(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
-			ident = ContextIdentity(ctx)
-			return nil
-		}
-		emptyMiddleware = func(h goa.Handler) goa.Handler {
-			return h
-		}
+		// handler   = func(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
+		// 	ident = ContextTenantIdentity(ctx)
+		// 	return nil
+		// }
+		// emptyMiddleware = func(h goa.Handler) goa.Handler {
+		// 	return h
+		// }
+		// DevModeMiddleware = NewDevJWTMiddleware(
+		// 	newClaims("abcd", []string{"tests"}),
+		// 	jwtgo.SigningMethodNone,
+		// 	string(jwtgo.UnsafeAllowNoneSignatureType),
+		// )
 	)
 
 	BeforeEach(func() {
@@ -150,27 +155,27 @@ BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 		ident = nil
 	})
 
-	getHandler := func(mw goa.Middleware) goa.Handler {
-		wrapper, err := goa.NewMiddleware(JWTMiddleware)
-		Ω(err).ShouldNot(HaveOccurred())
-		return wrapper(handler)
-	}
+	// getHandler := func(mw goa.Middleware) goa.Handler {
+	// 	wrapper, err := goa.NewMiddleware(JWTMiddleware)
+	// 	Ω(err).ShouldNot(HaveOccurred())
+	// 	return wrapper(handler)
+	// }
 
 	signedToken := func() string {
 		stdClaims := newClaims(id, audience)
-		t := jwtpkg.NewWithClaims(jwtpkg.SigningMethodHS256, stdClaims)
+		t := jwtgo.NewWithClaims(jwtgo.SigningMethodHS256, stdClaims)
 		signed, _ := t.SignedString(secret)
 		return signed
 	}
 
-	assertSecurityError := func(err error, msg string) {
-		err = errors.Cause(err)
-		errResp, ok := err.(*goa.ErrorResponse)
-		Ω(ok).Should(BeTrue())
-		Ω(errResp.Status).Should(Equal(401))
-		Ω(errResp.Code).Should(Equal("jwt_security_error"))
-		Ω(errResp.Detail).Should(Equal(msg))
-	}
+	// assertSecurityError := func(err error, msg string) {
+	// 	err = errors.Cause(err)
+	// 	errResp, ok := err.(*goa.ErrorResponse)
+	// 	Ω(ok).Should(BeTrue())
+	// 	Ω(errResp.Status).Should(Equal(401))
+	// 	Ω(errResp.Code).Should(Equal("jwt_security_error"))
+	// 	Ω(errResp.Detail).Should(Equal(msg))
+	// }
 
 	Context("when reading a key from the fs", func() {
 		Context("when the file does not exist", func() {
@@ -240,39 +245,43 @@ BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 		})
 	})
 
-	Context("context identity functions", func() {
+	Context("when using TenantIdentity", func() {
 		It("should be able to pass an identity to the context", func() {
 			id = test.RandString(8)
 			ident = &testIdentity{id, "tenant"}
 
-			ctx := WithIdentity(context.Background(), ident)
-			received := ContextIdentity(ctx)
+			ctx := WithTenantIdentity(context.Background(), ident)
+			received := ContextTenantIdentity(ctx)
 			Ω(received).Should(Equal(ident))
 		})
 
 		It("should return nil if there is no identity on the context", func() {
-			Ω(ContextIdentity(context.Background())).Should(BeNil())
+			Ω(ContextTenantIdentity(context.Background())).Should(BeNil())
 		})
 	})
 
-	Context("when building the dev token", func() {
-		It("should populate claims for Auth0 and edge", func() {
-			signedToken := BuildDevToken(context.Background(), jwtpkg.SigningMethodHS256)
+	Context("when creating an Auth0TenantIdentity", func() {
+		It("should parse the subject to get the user id", func() {
+
+		})
+	})
+
+	Context("when building a dev token", func() {
+		It("should populate claims", func() {
+			signedToken, err := BuildToken(
+				newClaims("1", []string{"anyone"}),
+				jwtgo.SigningMethodNone,
+				jwtgo.UnsafeAllowNoneSignatureType)
+			Ω(err).Should(BeNil())
 			Ω(signedToken).ShouldNot(Equal(""))
 
-			keyFunc := func(*jwtpkg.Token) (interface{}, error) {
-				return []byte("secret"), nil
-			}
-			actualClaims := jwtpkg.MapClaims{}
-			token, err := jwtpkg.ParseWithClaims(signedToken, &actualClaims, keyFunc)
+			actualClaims := jwtgo.MapClaims{}
+			data, err := jwtgo.DecodeSegment(strings.Split(signedToken, ".")[1])
 			Ω(err).Should(BeNil())
-			Ω(token.Valid).Should(BeTrue())
+			err = json.Unmarshal(data, &actualClaims)
+			Ω(err).Should(BeNil())
 
 			Ω(actualClaims["sub"]).Should(Equal("1"))
-			Ω(actualClaims["scopes"]).Should(Equal("api:admin api:access"))
-			Ω(actualClaims["src"]).Should(Equal("rm1"))
-			Ω(actualClaims["https://zing.zenoss/src"]).Should(Equal("rm1"))
-			Ω(actualClaims["https://zing.zenoss/tnt"]).Should(Equal("anyone"))
 
 			audience := actualClaims["aud"].([]interface{})
 			Ω(len(audience)).Should(Equal(1))
@@ -280,40 +289,40 @@ BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 		})
 	})
 
-	Context("using the dev mode middleware", func() {
-
-		It("should inject an authorization header when none exists", func() {
-			h := getHandler(JWTMiddleware)
-			err := DevModeMiddleware(h)(context.Background(), resp, req)
-			Ω(err).ShouldNot(HaveOccurred())
-			Ω(ident).ShouldNot(BeNil())
-			Ω(ident.ID()).Should(Equal("1"))
-		})
-
-		It("should respect an existing authorization header", func() {
-			id = test.RandString(8)
-			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", signedToken()))
-			h := getHandler(JWTMiddleware)
-			err := DevModeMiddleware(h)(svc.Context, resp, req)
-			Ω(err).ShouldNot(HaveOccurred())
-			Ω(ident).ShouldNot(BeNil())
-			Ω(ident.ID()).Should(Equal(id))
-		})
-
-	})
+	// Context("using the dev mode middleware", func() {
+	//
+	// 	It("should inject an authorization header when none exists", func() {
+	// 		h := getHandler(JWTMiddleware)
+	// 		err := DevModeMiddleware(h)(context.Background(), resp, req)
+	// 		Ω(err).ShouldNot(HaveOccurred())
+	// 		Ω(ident).ShouldNot(BeNil())
+	// 		Ω(ident.ID()).Should(Equal("1"))
+	// 	})
+	//
+	// 	It("should respect an existing authorization header", func() {
+	// 		id = test.RandString(8)
+	// 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", signedToken()))
+	// 		h := getHandler(JWTMiddleware)
+	// 		err := DevModeMiddleware(h)(svc.Context, resp, req)
+	// 		Ω(err).ShouldNot(HaveOccurred())
+	// 		Ω(ident).ShouldNot(BeNil())
+	// 		Ω(ident.ID()).Should(Equal(id))
+	// 	})
+	//
+	// })
 
 	Context("signing with a dynamic signer", func() {
-		claimsFunc := func() (jwtpkg.Claims, error) {
-			ctxIdent := ContextIdentity(claimsCtx)
+		claimsFunc := func() (jwtgo.Claims, error) {
+			ctxIdent := ContextTenantIdentity(claimsCtx)
 			return newClaims(ctxIdent.ID(), []string{ctxIdent.Tenant()}), nil
 		}
 		signer := &DynamicSigner{}
 		BeforeEach(func() {
-			claimsCtx = WithIdentity(context.Background(), &testIdentity{
+			claimsCtx = WithTenantIdentity(context.Background(), &testIdentity{
 				id,
 				audience[0],
 			})
-			signer = NewSigner(claimsFunc, jwtpkg.SigningMethodHS256, secret)
+			signer = NewSigner(claimsFunc, jwtgo.SigningMethodHS256, secret)
 			req.Header.Set("Authorization", "abc123")
 		})
 		Context("when the claimsFunc returns a claims", func() {
@@ -322,7 +331,7 @@ BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 			})
 			Context("with an invalid secret", func() {
 				BeforeEach(func() {
-					signer.Method = jwtpkg.SigningMethodRS256
+					signer.Method = jwtgo.SigningMethodRS256
 					signer.Secret = []byte("secret")
 				})
 				It("signing should return an error", func() {
@@ -335,7 +344,7 @@ BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 					signer.Secret = secret
 					id = "abcd"
 					audience = []string{"tenant"}
-					claimsCtx = WithIdentity(context.Background(), &testIdentity{
+					claimsCtx = WithTenantIdentity(context.Background(), &testIdentity{
 						id,
 						audience[0],
 					})
@@ -348,7 +357,7 @@ BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 			})
 		})
 		Context("when the claimsFunc returns an error", func() {
-			badClaimsFunc := func() (jwtpkg.Claims, error) {
+			badClaimsFunc := func() (jwtgo.Claims, error) {
 				return nil, errors.New("some error")
 			}
 			BeforeEach(func() {
@@ -400,68 +409,4 @@ BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 		})
 	})
 
-	Context("JWT middleware factory", func() {
-
-		It("should create middleware that rejects requests without a token", func() {
-			err := getHandler(emptyMiddleware)(context.Background(), resp, req)
-			Ω(err).Should(HaveOccurred())
-			assertSecurityError(err, `missing header "Authorization"`)
-		})
-
-		It("should create middleware that rejects requests with an invalid token", func() {
-			req.Header.Set("Authorization", "Bearer badheader")
-			err := getHandler(emptyMiddleware)(context.Background(), resp, req)
-			Ω(err).Should(HaveOccurred())
-			assertSecurityError(err, "JWT validation failed")
-		})
-
-		It("should create middleware that rejects requests with an invalid claims", func() {
-			req.Header.Set("Authorization", "bearer abc123.fghgd123.fsbsg234")
-			err := getHandler(emptyMiddleware)(context.Background(), resp, req)
-			Ω(err).Should(HaveOccurred())
-			assertSecurityError(err, "JWT validation failed")
-		})
-
-		It("should create middleware that allows requests with a valid token", func() {
-			id = test.RandString(8)
-			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", signedToken()))
-			err := getHandler(emptyMiddleware)(context.Background(), resp, req)
-			Ω(err).ShouldNot(HaveOccurred())
-		})
-
-		Context("using the default validator middleware", func() {
-			Context("and the audience is correct", func() {
-				JustBeforeEach(func() {
-					id = test.RandString(8)
-					req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", signedToken()))
-					ctx := context.Background()
-					err := getHandler(JWTMiddleware)(ctx, resp, req)
-					Ω(err).ShouldNot(HaveOccurred())
-				})
-
-				It("should pass the id through the context", func() {
-					Ω(ident).ShouldNot(BeNil())
-					Ω(ident.ID()).Should(Equal(id))
-				})
-
-				It("should pass the tenant through the context", func() {
-					Ω(ident).ShouldNot(BeNil())
-					Ω(ident.Tenant()).Should(Equal("tenant"))
-				})
-			})
-
-			Context("and the audience is incorrect", func() {
-				BeforeEach(func() {
-					id = test.RandString(8)
-					audience = []string{"more", "than", "one", "value"}
-					req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", signedToken()))
-				})
-
-				It("should return an error", func() {
-					err := getHandler(JWTMiddleware)(context.Background(), resp, req)
-					Ω(err).Should(HaveOccurred())
-				})
-			})
-		})
-	})
 })
