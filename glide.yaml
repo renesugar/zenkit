@@ -85,3 +85,5 @@ import:
   subpackages:
   - gbytes
   - ghttp
+- package: github.com/subosito/gotenv
+  version: 009e1f9581dc712aba5682a279dee155ca3eeded
