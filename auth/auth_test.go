@@ -18,6 +18,7 @@ import (
 	"github.com/goadesign/goa/design"
 	"github.com/goadesign/goa/design/apidsl"
 	"github.com/goadesign/goa/dslengine"
+	"github.com/goadesign/goa/middleware/security/jwt"
 	"github.com/pkg/errors"
 	. "github.com/zenoss/zenkit/auth"
 	"github.com/zenoss/zenkit/claims"
@@ -28,17 +29,16 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-type testIdentity struct {
-	id     string
+type testClaims struct {
+	claims.StandardClaims
 	tenant string
 }
 
-func (t *testIdentity) ID() string {
-	return t.id
-}
-
-func (t *testIdentity) Tenant() string {
+func (t *testClaims) Tenant() string {
 	return t.tenant
+}
+func (t *testClaims) Valid() error {
+	return nil
 }
 
 type errorLogger struct {
@@ -88,6 +88,7 @@ var _ = Describe("Auth utilities", func() {
 	var (
 		id           string
 		audience     []string
+		tenant       string
 		ident        TenantIdentity
 		file         *os.File
 		secret       = []byte("secret")
@@ -114,18 +115,51 @@ BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 		resp      *httptest.ResponseRecorder
 		req       *http.Request
 		claimsCtx context.Context
-		// handler   = func(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
-		// 	ident = ContextTenantIdentity(ctx)
-		// 	return nil
-		// }
-		// emptyMiddleware = func(h goa.Handler) goa.Handler {
-		// 	return h
-		// }
-		// DevModeMiddleware = NewDevJWTMiddleware(
-		// 	newClaims("abcd", []string{"tests"}),
-		// 	jwtgo.SigningMethodNone,
-		// 	string(jwtgo.UnsafeAllowNoneSignatureType),
-		// )
+		handler   = func(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
+			ident = ContextTenantIdentity(ctx)
+			return nil
+		}
+		emptyMiddleware = func(h goa.Handler) goa.Handler {
+			return h
+		}
+		DevModeMiddleware = NewDevJWTMiddleware(
+			newClaims("1", []string{"tests"}),
+			jwtgo.SigningMethodNone,
+			jwtgo.UnsafeAllowNoneSignatureType,
+		)
+		DevErrMiddleware = NewDevJWTMiddleware(
+			newClaims("1", []string{"tests"}),
+			jwtgo.SigningMethodNone,
+			"nothin",
+		)
+		JWTMiddlware = func(h goa.Handler) goa.Handler {
+			return func(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
+				val := req.Header.Get(AuthorizationHeader)
+				if val == "" {
+					return jwt.ErrJWTError(fmt.Sprintf("missing header \"%s\"", AuthorizationHeader))
+				}
+
+				parts := strings.Split(val, ".")
+				if len(parts) != 3 {
+					return jwt.ErrJWTError("JWT validation failed")
+				}
+
+				var sc claims.StandardClaims
+				claimBytes, _ := jwtgo.DecodeSegment(parts[1])
+				err := json.Unmarshal(claimBytes, &sc)
+				if err != nil {
+					return jwt.ErrJWTError("JWT unmarshal failed")
+				}
+				ctx = WithTenantIdentity(ctx, NewAuth0TenantIdentity(&testClaims{
+					StandardClaims: claims.StandardClaims{
+						Sub: id,
+					},
+					tenant: "test",
+				}))
+
+				return h(ctx, rw, req)
+			}
+		}
 	)
 
 	BeforeEach(func() {
@@ -134,6 +168,7 @@ BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 		req, _ = http.NewRequest("", "http://example.com/", nil)
 		resp = httptest.NewRecorder()
 		audience = []string{"tenant"}
+		tenant = "tenant"
 		claimsCtx = context.Background()
 	})
 
@@ -155,11 +190,11 @@ BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 		ident = nil
 	})
 
-	// getHandler := func(mw goa.Middleware) goa.Handler {
-	// 	wrapper, err := goa.NewMiddleware(JWTMiddleware)
-	// 	Ω(err).ShouldNot(HaveOccurred())
-	// 	return wrapper(handler)
-	// }
+	getHandler := func(mw goa.Middleware) goa.Handler {
+		wrapper, err := goa.NewMiddleware(JWTMiddlware)
+		Ω(err).ShouldNot(HaveOccurred())
+		return wrapper(handler)
+	}
 
 	signedToken := func() string {
 		stdClaims := newClaims(id, audience)
@@ -167,15 +202,6 @@ BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 		signed, _ := t.SignedString(secret)
 		return signed
 	}
-
-	// assertSecurityError := func(err error, msg string) {
-	// 	err = errors.Cause(err)
-	// 	errResp, ok := err.(*goa.ErrorResponse)
-	// 	Ω(ok).Should(BeTrue())
-	// 	Ω(errResp.Status).Should(Equal(401))
-	// 	Ω(errResp.Code).Should(Equal("jwt_security_error"))
-	// 	Ω(errResp.Detail).Should(Equal(msg))
-	// }
 
 	Context("when reading a key from the fs", func() {
 		Context("when the file does not exist", func() {
@@ -233,7 +259,7 @@ BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 	})
 
 	Context("using common JWT security", func() {
-		It(fmt.Sprintf("should register the authorization header \"%\"", AuthorizationHeader), func() {
+		It(fmt.Sprintf("should register the authorization header \"%s\"", AuthorizationHeader), func() {
 			dslengine.Reset()
 			apidsl.API("test", func() {
 				apidsl.Security(JWT(), func() {})
@@ -248,7 +274,12 @@ BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 	Context("when using TenantIdentity", func() {
 		It("should be able to pass an identity to the context", func() {
 			id = test.RandString(8)
-			ident = &testIdentity{id, "tenant"}
+			ident = NewAuth0TenantIdentity(&testClaims{
+				StandardClaims: claims.StandardClaims{
+					Sub: id,
+				},
+				tenant: "test",
+			})
 
 			ctx := WithTenantIdentity(context.Background(), ident)
 			received := ContextTenantIdentity(ctx)
@@ -289,27 +320,32 @@ BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 		})
 	})
 
-	// Context("using the dev mode middleware", func() {
-	//
-	// 	It("should inject an authorization header when none exists", func() {
-	// 		h := getHandler(JWTMiddleware)
-	// 		err := DevModeMiddleware(h)(context.Background(), resp, req)
-	// 		Ω(err).ShouldNot(HaveOccurred())
-	// 		Ω(ident).ShouldNot(BeNil())
-	// 		Ω(ident.ID()).Should(Equal("1"))
-	// 	})
-	//
-	// 	It("should respect an existing authorization header", func() {
-	// 		id = test.RandString(8)
-	// 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", signedToken()))
-	// 		h := getHandler(JWTMiddleware)
-	// 		err := DevModeMiddleware(h)(svc.Context, resp, req)
-	// 		Ω(err).ShouldNot(HaveOccurred())
-	// 		Ω(ident).ShouldNot(BeNil())
-	// 		Ω(ident.ID()).Should(Equal(id))
-	// 	})
-	//
-	// })
+	Context("using a new dev mode middleware", func() {
+
+		It("should pass errors on", func() {
+			h := getHandler(JWTMiddlware)
+			err := DevErrMiddleware(h)(svc.Context, resp, req)
+			Ω(err).Should(HaveOccurred())
+		})
+
+		It("should inject an authorization header when none exists", func() {
+			h := getHandler(JWTMiddlware)
+			err := DevModeMiddleware(h)(svc.Context, resp, req)
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(ident).ShouldNot(BeNil())
+			Ω(ident.ID()).Should(Equal(id))
+		})
+
+		It("should respect an existing authorization header", func() {
+			id = test.RandString(8)
+			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", signedToken()))
+			h := getHandler(emptyMiddleware)
+			err := DevModeMiddleware(h)(svc.Context, resp, req)
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(ident).ShouldNot(BeNil())
+			Ω(ident.ID()).Should(Equal(id))
+		})
+	})
 
 	Context("signing with a dynamic signer", func() {
 		claimsFunc := func() (jwtgo.Claims, error) {
@@ -318,10 +354,12 @@ BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 		}
 		signer := &DynamicSigner{}
 		BeforeEach(func() {
-			claimsCtx = WithTenantIdentity(context.Background(), &testIdentity{
-				id,
-				audience[0],
-			})
+			claimsCtx = WithTenantIdentity(context.Background(), NewAuth0TenantIdentity(&testClaims{
+				StandardClaims: claims.StandardClaims{
+					Sub: id,
+				},
+				tenant: "test",
+			}))
 			signer = NewSigner(claimsFunc, jwtgo.SigningMethodHS256, secret)
 			req.Header.Set("Authorization", "abc123")
 		})
@@ -344,10 +382,12 @@ BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 					signer.Secret = secret
 					id = "abcd"
 					audience = []string{"tenant"}
-					claimsCtx = WithTenantIdentity(context.Background(), &testIdentity{
-						id,
-						audience[0],
-					})
+					claimsCtx = WithTenantIdentity(context.Background(), NewAuth0TenantIdentity(&testClaims{
+						StandardClaims: claims.StandardClaims{
+							Sub: id,
+						},
+						tenant: audience[0],
+					}))
 				})
 				It("should return a Signer, that puts a good token in request headers", func() {
 					err := signer.Sign(req)
