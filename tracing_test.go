@@ -44,7 +44,7 @@ var _ = Describe("Tracing", func() {
 	buffer = BufferReader(listener)
 
 	BeforeEach(func() {
-		svc = NewService(test.RandString(8), false)
+		svc = NewService(test.RandString(8))
 
 		logBuf = NewBuffer()
 		logger = log.New(logBuf, "", log.Ltime)
