@@ -60,29 +60,6 @@ func newClaims(id string, audience []string) claims.StandardClaims {
 	}
 }
 
-func newClaimsMap(id string, audience []string) claims.StandardClaimsMap {
-	return claims.StandardClaimsFromStruct(newClaims(id, audience))
-}
-
-type mockSigningMethod struct {
-	signature string
-	err       error
-}
-
-func (mock *mockSigningMethod) Verify(signingString, signature string, key interface{}) error {
-	// unused
-	return nil
-}
-
-func (mock *mockSigningMethod) Sign(signingString string, key interface{}) (string, error) {
-	return mock.signature, mock.err
-}
-
-func (mock *mockSigningMethod) Alg() string {
-	// unused
-	return "mock"
-}
-
 var _ = Describe("Auth utilities", func() {
 
 	var (
@@ -118,9 +95,6 @@ BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 		handler   = func(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
 			ident = ContextTenantIdentity(ctx)
 			return nil
-		}
-		emptyMiddleware = func(h goa.Handler) goa.Handler {
-			return h
 		}
 		DevModeMiddleware = NewDevJWTMiddleware(
 			newClaims("1", []string{"tests"}),
@@ -191,7 +165,7 @@ BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 	})
 
 	getHandler := func(mw goa.Middleware) goa.Handler {
-		wrapper, err := goa.NewMiddleware(JWTMiddlware)
+		wrapper, err := goa.NewMiddleware(mw)
 		Ω(err).ShouldNot(HaveOccurred())
 		return wrapper(handler)
 	}
@@ -339,7 +313,7 @@ BMUjCjMj7krg2mdNb3PmGN97AtEelKgC8RRdlswCdPQkFVQq2tBfPXrckdMHO18=
 		It("should respect an existing authorization header", func() {
 			id = test.RandString(8)
 			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", signedToken()))
-			h := getHandler(emptyMiddleware)
+			h := getHandler(JWTMiddlware)
 			err := DevModeMiddleware(h)(svc.Context, resp, req)
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(ident).ShouldNot(BeNil())
