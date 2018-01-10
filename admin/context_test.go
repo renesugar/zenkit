@@ -26,7 +26,7 @@ var _ = Describe("Context", func() {
 
 	Context("with a parent service on the context", func() {
 
-		var service = zenkit.NewService("test-service", false)
+		var service = zenkit.NewService("test-service")
 
 		BeforeEach(func() {
 			service.Context = metrics.WithMetrics(ctx, &Registry{})

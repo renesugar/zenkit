@@ -1,27 +1,60 @@
 package auth
 
-import "github.com/zenoss/zenkit/claims"
+import (
+	"context"
+	"strings"
 
-type Identity interface {
+	"github.com/zenoss/zenkit/claims"
+)
+
+type key int
+
+const (
+	identityKey key = iota + 1
+)
+
+func WithTenantIdentity(ctx context.Context, identity TenantIdentity) context.Context {
+	return context.WithValue(ctx, identityKey, identity)
+}
+
+func ContextTenantIdentity(ctx context.Context) TenantIdentity {
+	if v := ctx.Value(identityKey); v != nil {
+		return v.(TenantIdentity)
+	}
+	return nil
+}
+
+// TenantIdentity is an identity in a multi-tenant application
+type TenantIdentity interface {
 	ID() string
 	Tenant() string
 }
 
-type tokenIdentity struct {
-	claims.Claims
+// Auth0TenantIdentity is an identity from Auth0 for a multi-tenant application
+type Auth0TenantIdentity struct {
+	id     string
+	tenant string
 }
 
-func (t *tokenIdentity) ID() string {
-	return t.Claims.Subject()
-}
-
-func (t *tokenIdentity) Tenant() string {
-	aud := t.Claims.Audience()
-
-	// The tenant should be the only thing in the audience claim.
-	if len(aud) != 1 {
-		return ""
+// NewAuth0TenantIdentity creates an Auth0TenantIdentity for the tokenClaims
+func NewAuth0TenantIdentity(tokenClaims claims.MultiTenantClaims) *Auth0TenantIdentity {
+	// subject comes in from Auth0 as "{idp}|{connection}|{userid}"
+	// eg: "sub": "ad|acmeco|thedude",
+	// connection may be missing in the case that the idp is the connection
+	// eg: "sub": "google-apps|foo@bar.com"
+	identParts := strings.Split(tokenClaims.Subject(), "|")
+	return &Auth0TenantIdentity{
+		id:     identParts[len(identParts)-1],
+		tenant: tokenClaims.Tenant(),
 	}
+}
 
-	return aud[0]
+// ID gets the user id for the identity
+func (ti *Auth0TenantIdentity) ID() string {
+	return ti.id
+}
+
+// Tenant gets the tenant the identity belogs to
+func (ti *Auth0TenantIdentity) Tenant() string {
+	return ti.tenant
 }

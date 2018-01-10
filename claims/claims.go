@@ -20,31 +20,33 @@ var (
 	ErrIssuedAt = errors.New("used before issued")
 	// ErrID occurs when the issuer jti is not valid
 	ErrID = errors.New("ID is invalid")
-	// ValidDuration is the duration of time a JWT is valid
-	ValidDuration = time.Hour
+	// ErrTenant occurs when a MultiTenantClaims does not have a tenant
+	ErrTenant = errors.New("Tenant is empty")
 )
 
 // Claims exposes a collection of mandatory claims from a JWT
 type Claims interface {
-	// Issuer is the jwt "iss" claim
 	Issuer() string
-	// Subject is the jwt "sub" claim
 	Subject() string
-	// Audience is the jwt "aud" claim
 	Audience() []string
-	// ExpiresAt is the jwt "exp" claim
 	ExpiresAt() int64
-	// NotBefore is the jwt "nbf" claim
-	NotBefore() int64
-	// IssuedAt is the jwt "iat" claim
 	IssuedAt() int64
-	// ID is the jwt "jti" claim
-	ID() string
+	Valid() error
 }
 
-// Valid determines if a JWT should be rejected or not based on
-// standard, mandatory jwt claims
-func Valid(claims Claims) error {
+// MultiTenantClaims is a set of claims fit for consumption by a multitenant app
+type MultiTenantClaims interface {
+	Issuer() string
+	Subject() string
+	Audience() []string
+	ExpiresAt() int64
+	IssuedAt() int64
+	Tenant() string
+	Valid() error
+}
+
+// ValidateClaims determines if a JWT should be rejected
+func ValidateClaims(claims Claims) error {
 	now := time.Now().Unix()
 	if !verifyIssuerExists(claims.Issuer()) {
 		return ErrIssuer
@@ -54,12 +56,18 @@ func Valid(claims Claims) error {
 		return ErrAudience
 	} else if !verifyExpiresAt(claims.ExpiresAt(), now) {
 		return ErrExpiresAt
-	} else if !verifyNotBefore(claims.NotBefore(), now) {
-		return ErrNotBefore
 	} else if !verifyIssuedAt(claims.IssuedAt(), now) {
 		return ErrIssuedAt
-	} else if !verifyID(claims.ID()) {
-		return ErrID
+	}
+	return nil
+}
+
+// ValidateMultiTenantClaims determines if a JWT should be rejected
+func ValidateMultiTenantClaims(claims MultiTenantClaims) error {
+	if err := ValidateClaims(claims); err != nil {
+		return err
+	} else if !verifyTenant(claims.Tenant()) {
+		return ErrTenant
 	}
 	return nil
 }
@@ -101,13 +109,6 @@ func verifyExpiresAt(claimed int64, now int64) bool {
 	return false
 }
 
-func verifyNotBefore(claimed int64, now int64) bool {
-	if claimed != 0 && claimed <= now {
-		return true
-	}
-	return false
-}
-
 func verifyIssuedAt(claimed int64, now int64) bool {
 	if claimed != 0 && claimed <= now {
 		return true
@@ -115,6 +116,6 @@ func verifyIssuedAt(claimed int64, now int64) bool {
 	return false
 }
 
-func verifyID(claimed string) bool {
+func verifyTenant(claimed string) bool {
 	return claimed != ""
 }

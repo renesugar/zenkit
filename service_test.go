@@ -65,21 +65,8 @@ var _ = Describe("Service", func() {
 		ctrl.MuxHandler("test", handler, nil)(rw, req, url.Values{})
 	}
 
-	Context("with auth disabled", func() {
-		BeforeEach(func() {
-			svc = NewService(name, true)
-		})
-
-		It("should inject an authenticated user", func() {
-			RunHandler(func(ctx context.Context, rw http.ResponseWriter, req *http.Request) {
-				Ω(req.Header.Get(auth.AuthorizationHeader)).ShouldNot(BeEmpty())
-			})
-		})
-
-	})
-
 	BeforeEach(func() {
-		svc = NewService(name, false)
+		svc = NewService(name)
 	})
 
 	It("should not have a user injected", func() {

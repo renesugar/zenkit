@@ -10,7 +10,6 @@ var (
 		"sub": "",
 		"aud": []string{},
 		"exp": int64(0),
-		"nbf": int64(0),
 		"iat": int64(0),
 		"jti": "",
 	}
@@ -40,9 +39,7 @@ func StandardClaimsFromStruct(claims StandardClaims) StandardClaimsMap {
 		"sub": claims.Sub,
 		"aud": claims.Aud,
 		"exp": claims.Exp,
-		"nbf": claims.Nbf,
 		"iat": claims.Iat,
-		"jti": claims.Jti,
 	}
 }
 
@@ -66,24 +63,14 @@ func (m StandardClaimsMap) ExpiresAt() int64 {
 	return GetExpiresAt(m)
 }
 
-// NotBefore is the jwt "nbf" claim
-func (m StandardClaimsMap) NotBefore() int64 {
-	return GetNotBefore(m)
-}
-
 // IssuedAt is the jwt "iat" claim
 func (m StandardClaimsMap) IssuedAt() int64 {
 	return GetIssuedAt(m)
 }
 
-// ID is the jwt "jti" claim
-func (m StandardClaimsMap) ID() string {
-	return GetID(m)
-}
-
 // Valid verifies that mandatory claims exist and are valid
 func (m StandardClaimsMap) Valid() error {
-	return Valid(m)
+	return ValidateClaims(m)
 }
 
 // Validate checks validity of all fields and verifies
@@ -101,22 +88,18 @@ type StandardClaims struct {
 	Sub string   `json:"sub"`
 	Aud []string `json:"aud"`
 	Exp int64    `json:"exp"`
-	Nbf int64    `json:"nbf"`
 	Iat int64    `json:"iat"`
-	Jti string   `json:"jti"`
 }
 
 // NewStandardClaims creates a new StandardClaims
-func NewStandardClaims(iss, sub string, aud []string) StandardClaims {
+func NewStandardClaims(iss, sub string, aud []string, validDuration time.Duration) StandardClaims {
 	now := time.Now()
 	return StandardClaims{
 		Iss: iss,
 		Sub: sub,
 		Aud: aud,
-		Exp: now.Add(ValidDuration).Unix(),
-		Nbf: now.Unix(),
+		Exp: now.Add(validDuration).Unix(),
 		Iat: now.Unix(),
-		Jti: "0",
 	}
 }
 
@@ -128,9 +111,7 @@ func StandardClaimsFromMap(m StandardClaimsMap) StandardClaims {
 		Sub: m.Subject(),
 		Aud: m.Audience(),
 		Exp: m.ExpiresAt(),
-		Nbf: m.NotBefore(),
 		Iat: m.IssuedAt(),
-		Jti: m.ID(),
 	}
 }
 
@@ -154,24 +135,14 @@ func (claims StandardClaims) ExpiresAt() int64 {
 	return claims.Exp
 }
 
-// NotBefore is the jwt "nbf" claim
-func (claims StandardClaims) NotBefore() int64 {
-	return claims.Nbf
-}
-
 // IssuedAt is the jwt "iat" claim
 func (claims StandardClaims) IssuedAt() int64 {
 	return claims.Iat
 }
 
-// ID is the jwt "jti" claim
-func (claims StandardClaims) ID() string {
-	return claims.Jti
-}
-
 // Valid determines if a JWT should be rejected or not and implements jwt-go Claims interface
 func (claims StandardClaims) Valid() error {
-	return Valid(claims)
+	return ValidateClaims(claims)
 }
 
 // Validate checks validity of all fields and verifies

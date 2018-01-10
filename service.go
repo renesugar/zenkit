@@ -5,19 +5,14 @@ import (
 	"github.com/goadesign/goa/middleware"
 	"github.com/zenoss/zenkit/admin"
 	"github.com/zenoss/zenkit/admin/app"
-	"github.com/zenoss/zenkit/auth"
 	"github.com/zenoss/zenkit/logging"
 	"github.com/zenoss/zenkit/metrics"
 )
 
-func NewService(name string, authDisabled bool) *goa.Service {
+func NewService(name string) *goa.Service {
 
 	svc := goa.New(name)
 	svc.WithLogger(logging.ServiceLogger())
-
-	if authDisabled {
-		svc.Use(auth.DevModeMiddleware)
-	}
 	svc.Use(middleware.RequestID())
 	svc.Use(middleware.LogRequest(false))
 	svc.Use(metrics.MetricsMiddleware())

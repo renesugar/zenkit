@@ -64,21 +64,6 @@ func GetExpiresAt(m map[string]interface{}) int64 {
 	return int64(0)
 }
 
-// GetNotBefore gets "nbf" from the map as an int64 that represents epoch time
-func GetNotBefore(m map[string]interface{}) int64 {
-	exp, ok := m["nbf"]
-	if !ok {
-		return int64(0)
-	}
-	switch v := exp.(type) {
-	case float64:
-		return int64(v)
-	case int64:
-		return v
-	}
-	return int64(0)
-}
-
 // GetIssuedAt gets "iat" from the map as an int64 that represents epoch time
 func GetIssuedAt(m map[string]interface{}) int64 {
 	exp, ok := m["iat"]
@@ -92,17 +77,4 @@ func GetIssuedAt(m map[string]interface{}) int64 {
 		return v
 	}
 	return int64(0)
-}
-
-// GetID gets "jti" from the map as a string
-func GetID(m map[string]interface{}) string {
-	jti, ok := m["jti"]
-	if !ok {
-		return ""
-	}
-	jtiStr, ok := jti.(string)
-	if !ok {
-		return ""
-	}
-	return jtiStr
 }

@@ -15,23 +15,21 @@ func newStandardClaimsMap() StandardClaimsMap {
 		"iss": "someone",
 		"sub": "abcd",
 		"aud": []string{"tester"},
-		"exp": now.Add(ValidDuration).Unix(),
-		"nbf": now.Unix(),
+		"exp": now.Add(time.Hour).Unix(),
 		"iat": now.Unix(),
-		"jti": "0",
 	}
 }
 
 var _ = Describe("Standard Claims", func() {
 	var (
 		now           = time.Now().Unix()
-		claims        = NewStandardClaims("someone", "abcd", []string{"tester"})
+		claims        = NewStandardClaims("someone", "abcd", []string{"tester"}, time.Hour)
 		claimsMap     = newStandardClaimsMap()
 		validIssuers  = []string{"someone"}
 		validAudience = "tester"
 	)
 	BeforeEach(func() {
-		claims = NewStandardClaims("someone", "abcd", []string{"tester"})
+		claims = NewStandardClaims("someone", "abcd", []string{"tester"}, time.Hour)
 		claimsMap = newStandardClaimsMap()
 	})
 	Context("when creating a StandardClaimsMap", func() {
@@ -46,11 +44,7 @@ var _ = Describe("Standard Claims", func() {
 				Ω(ok).Should(BeTrue())
 				_, ok = m["exp"]
 				Ω(ok).Should(BeTrue())
-				_, ok = m["nbf"]
-				Ω(ok).Should(BeTrue())
 				_, ok = m["iat"]
-				Ω(ok).Should(BeTrue())
-				_, ok = m["jti"]
 				Ω(ok).Should(BeTrue())
 			})
 		})
@@ -132,24 +126,6 @@ var _ = Describe("Standard Claims", func() {
 				Ω(err).Should(Equal(ErrExpiresAt))
 			})
 		})
-		Context("when not before is empty", func() {
-			BeforeEach(func() {
-				claims.Nbf = int64(0)
-			})
-			It("should return an error", func() {
-				err := claims.Valid()
-				Ω(err).Should(Equal(ErrNotBefore))
-			})
-		})
-		Context("when ID is empty", func() {
-			BeforeEach(func() {
-				claims.Jti = ""
-			})
-			It("should return an error", func() {
-				err := claims.Valid()
-				Ω(err).Should(Equal(ErrID))
-			})
-		})
 		Context("when no claimed fields are empty", func() {
 			It("should validate with no errors", func() {
 				err := claims.Valid()
@@ -201,15 +177,6 @@ var _ = Describe("Standard Claims", func() {
 				It("should return an error", func() {
 					err := claims.Valid()
 					Ω(err).Should(Equal(ErrExpiresAt))
-				})
-			})
-			Context("when not before is invalid", func() {
-				BeforeEach(func() {
-					claims.Nbf = now + int64(time.Hour)
-				})
-				It("should return an error", func() {
-					err := claims.Valid()
-					Ω(err).Should(Equal(ErrNotBefore))
 				})
 			})
 			Context("when issued at is in the future", func() {
@@ -333,35 +300,6 @@ var _ = Describe("Standard Claims", func() {
 				})
 			})
 		})
-		Context("when checking the not before", func() {
-			Context("when the nbf field is empty", func() {
-				m := StandardClaimsMap{}
-				It("should return 0", func() {
-					nbf := m.NotBefore()
-					Ω(nbf).Should(Equal(int64(0)))
-				})
-			})
-			Context("when the nbf field is not an int64", func() {
-				Context("when it can be converted to a float64", func() {
-					m := StandardClaimsMap{
-						"nbf": 2e03,
-					}
-					It("should return that number as an int64", func() {
-						nbf := m.NotBefore()
-						Ω(nbf).Should(Equal(int64(2000)))
-					})
-				})
-				Context("when it cannot be converted to a float64", func() {
-					m := StandardClaimsMap{
-						"nbf": claims,
-					}
-					It("should return 0", func() {
-						nbf := m.NotBefore()
-						Ω(nbf).Should(Equal(int64(0)))
-					})
-				})
-			})
-		})
 		Context("when checking the issued at", func() {
 			Context("when the iat field is empty", func() {
 				m := StandardClaimsMap{}
@@ -388,24 +326,6 @@ var _ = Describe("Standard Claims", func() {
 						iat := m.IssuedAt()
 						Ω(iat).Should(Equal(int64(0)))
 					})
-				})
-			})
-		})
-		Context("when checking the jwt ID", func() {
-			Context("when the jti field is empty", func() {
-				m := StandardClaimsMap{}
-				It("should return an empty string", func() {
-					jti := m.ID()
-					Ω(jti).Should(Equal(""))
-				})
-			})
-			Context("when the jti field is not a string", func() {
-				m := StandardClaimsMap{
-					"jti": claims,
-				}
-				It("should return an empty string", func() {
-					jti := m.ID()
-					Ω(jti).Should(Equal(""))
 				})
 			})
 		})

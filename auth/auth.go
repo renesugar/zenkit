@@ -2,42 +2,24 @@ package auth
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 	"time"
 
 	jwtgo "github.com/dgrijalva/jwt-go"
+	"github.com/goadesign/goa"
 	"github.com/goadesign/goa/design"
 	"github.com/goadesign/goa/design/apidsl"
+	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 )
-
-type JWTValidator func(ctx context.Context) error
 
 var (
 	FS                  = afero.NewReadOnlyFs(afero.NewOsFs())
 	AuthorizationHeader = "Authorization"
 	KeyFileTimeout      = 30 * time.Second
 	localJWT            *design.SecuritySchemeDefinition
-	devJWT              string
-
-	// These claims are used to populate the dev token (devJWT) using the secret defined by signingKey
-	//  - exp is equivalent to Monday, November 16, 2020 7:29:46 AM GMT
-	//  - iat/nbf is equivalent to Thursday, September 14, 2017 9:43:06 PM GMT
-	// These claims are a union of claims that could be provided by Auth0 or the edge service:
-	//  - "https://zing.zenoss/tnt" and "https://zing.zenoss/src" are used to simulate tokens provided by Auth0
-	//  - "aud" and "src" are used to simulate tokens from the edge service.
-	devClaims = jwtgo.MapClaims{
-		"iss": "Auth0",
-		"sub": "1",
-		"aud": []string{"anyone"},
-		"https://zing.zenoss/tnt": "anyone",
-		"exp":    1605511786,
-		"nbf":    1505425386,
-		"iat":    1505425386,
-		"jti":    "1",
-		"scopes": "api:admin api:access",
-		"src":    "rm1",
-		"https://zing.zenoss/src": "rm1",
-	}
+	devToken            string
 )
 
 func JWT() *design.SecuritySchemeDefinition {
@@ -49,17 +31,32 @@ func JWT() *design.SecuritySchemeDefinition {
 	return localJWT
 }
 
-func BuildDevToken(ctx context.Context, signingMethod jwtgo.SigningMethod) string {
-	token := jwtgo.NewWithClaims(signingMethod, devClaims)
-	signedToken, _ := token.SignedString([]byte(signingKey))
-	return signedToken
+// BuildToken builds a token from the given params
+func BuildToken(claims jwtgo.Claims, signingMethod jwtgo.SigningMethod, key interface{}) (string, error) {
+	token := jwtgo.NewWithClaims(signingMethod, claims)
+	signedToken, err := token.SignedString(key)
+	if err != nil {
+		return "", err
+	}
+	return signedToken, nil
 }
 
-const (
-	ScopeAPIAccess = "api:access"
-	ScopeAPIAdmin  = "api:admin"
-)
-
-const (
-	signingKey = "secret"
-)
+// NewDevJWTMiddleware creates a middleware that inserts a dev token in the request header
+func NewDevJWTMiddleware(devClaims jwtgo.Claims, signingMethod jwtgo.SigningMethod, key interface{}) goa.Middleware {
+	return func(h goa.Handler) goa.Handler {
+		return func(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
+			header := req.Header.Get(AuthorizationHeader)
+			if header == "" {
+				if len(devToken) == 0 {
+					signedToken, err := BuildToken(devClaims, signingMethod, key)
+					if err != nil {
+						return errors.Wrap(err, "Unable to sign token")
+					}
+					devToken = fmt.Sprintf("Bearer %s", signedToken)
+				}
+				req.Header.Set("Authorization", devToken)
+			}
+			return h(ctx, rw, req)
+		}
+	}
+}
