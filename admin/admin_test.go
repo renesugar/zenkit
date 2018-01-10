@@ -36,7 +36,7 @@ var _ = Describe("Admin", func() {
 
 	BeforeEach(func() {
 		ctx = context.Background()
-		parent = zenkit.NewService("test-service", false)
+		parent = zenkit.NewService("test-service")
 	})
 
 	JustBeforeEach(func() {

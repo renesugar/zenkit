@@ -24,7 +24,7 @@ var _ = Describe("Swagger", func() {
 
 	BeforeEach(func() {
 		ctx = context.Background()
-		parent = zenkit.NewService("test-service", false)
+		parent = zenkit.NewService("test-service")
 	})
 
 	JustBeforeEach(func() {
