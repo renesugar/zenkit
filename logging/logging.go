@@ -5,9 +5,9 @@ import (
 
 	"github.com/goadesign/goa"
 	goalogrus "github.com/goadesign/goa/logging/logrus"
+	"github.com/goadesign/goa/middleware"
 	"github.com/sirupsen/logrus"
 	"github.com/zenoss/zenkit/funcname"
-	"github.com/goadesign/goa/middleware"
 )
 
 var noop = func() {}
@@ -49,6 +49,7 @@ func SetLogLevel(svc *goa.Service, level string) {
 		}).Debug("Requested log level is already active. Ignoring.")
 		return
 	}
+	logrus.SetLevel(newlevel)
 	logger.Level = newlevel
 	logger.WithFields(logrus.Fields{
 		"oldlevel": oldlevel,
