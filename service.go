@@ -3,6 +3,7 @@ package zenkit
 import (
 	"github.com/goadesign/goa"
 	"github.com/goadesign/goa/middleware"
+	gometrics "github.com/rcrowley/go-metrics"
 	"github.com/zenoss/zenkit/admin"
 	"github.com/zenoss/zenkit/admin/app"
 	"github.com/zenoss/zenkit/logging"
@@ -13,6 +14,7 @@ func NewService(name string) *goa.Service {
 
 	svc := goa.New(name)
 	svc.WithLogger(logging.ServiceLogger())
+	svc.Context = metrics.WithMetrics(svc.Context, gometrics.NewRegistry())
 	svc.Use(middleware.RequestID())
 	svc.Use(middleware.LogRequest(false))
 	svc.Use(metrics.MetricsMiddleware())
@@ -27,6 +29,10 @@ func NewAdminService(parent *goa.Service) *goa.Service {
 
 	svc := goa.New("admin")
 	svc.Context = admin.WithParentService(svc.Context, parent)
+	// Assuming NewService was called before NewAdminService, this will link the
+	// admin metrics controller with the metrics collected by parent service so that
+	// any metrics collected by the parent service are reported by the AdminService.
+	svc.Context = metrics.WithMetrics(svc.Context, metrics.ContextMetrics(parent.Context))
 
 	c := admin.NewAdminController(svc)
 	app.MountAdminController(svc, c)

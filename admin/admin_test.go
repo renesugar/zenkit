@@ -67,6 +67,8 @@ var _ = Describe("Admin", func() {
 
 		Context("when the metrics middleware isn't hooked up", func() {
 			It("should respond OK", func() {
+				s := ContextParentService(ctx)
+				s.Context = metrics.WithMetrics(s.Context, nil)
 				test.MetricsAdminOK(t, ctx, svc, ctrl, false)
 			})
 		})
