@@ -42,7 +42,7 @@ import:
 - package: github.com/xeipuuv/gojsonreference
   version: e02fc20de94c78484cd5ffb007f8af96be030a45
 - package: github.com/goadesign/goa
-  version: 94c5f00a452130a8732b2e3348eb9259be23a224
+  version: 501eff484a0349a0013a0165d05fa17f8e2c758e
   subpackages:
   - design
   - design/apidsl
